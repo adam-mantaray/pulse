@@ -1,6 +1,6 @@
 import { action, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 /**
  * Seed agent activity directly (no auth needed).
@@ -51,7 +51,7 @@ export const seedDemoData = action({
         timezone: "Africa/Cairo",
       });
     } catch {
-      const existing = await ctx.runQuery(api.users.getUserByEmail, {
+      const existing = await ctx.runQuery(internal.users.getUserByEmail, {
         email: "ahmed@mantaray.digital",
       });
       if (!existing) throw new Error("Failed to create or find user");
