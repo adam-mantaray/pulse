@@ -182,3 +182,10 @@ export const getActiveObjectives = internalQuery({
       .collect();
   },
 });
+
+export const triggerSync = action({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.runAction(internal.linearSync.syncLinearProjects, {});
+  },
+});

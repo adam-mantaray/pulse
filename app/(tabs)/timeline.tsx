@@ -56,7 +56,7 @@ export default function TimelineScreen() {
     agentFilter: agentFilter === 'All' ? undefined : agentFilter.toLowerCase(),
   });
 
-  const syncLinear = useAction(api.linearSync.syncLinearProjects);
+  const syncLinear = useAction(api.linearSync.triggerSync);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
