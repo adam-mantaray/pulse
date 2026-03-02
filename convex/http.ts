@@ -2,6 +2,19 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 
+function verifyWebhookSecret(request: Request): Response | null {
+  const secret = process.env.PULSE_WEBHOOK_SECRET;
+  if (!secret) return null; // not configured — skip check in dev
+  const provided = request.headers.get("x-webhook-secret") ?? request.headers.get("authorization")?.replace("Bearer ", "");
+  if (provided !== secret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
+
 const http = httpRouter();
 
 // Agent writes inbound message to agentMessages
@@ -9,6 +22,9 @@ http.route({
   path: "/api/pulse/message",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    const authError = verifyWebhookSecret(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { agentName, content, userId } = body;
 
@@ -37,6 +53,9 @@ http.route({
   path: "/api/pulse/agents/sync",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    const authError = verifyWebhookSecret(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { agents } = body;
 
@@ -61,6 +80,9 @@ http.route({
   path: "/api/pulse/agents/status",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
+    const authError = verifyWebhookSecret(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { agentId, status, currentTask } = body;
 
