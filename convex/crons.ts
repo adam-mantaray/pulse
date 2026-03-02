@@ -9,4 +9,10 @@ crons.interval(
   internal.linearSync.syncLinearProjects,
 );
 
+crons.daily(
+  "reset-missed-habit-streaks",
+  { hourUTC: 22, minuteUTC: 1 },
+  internal.habits.resetMissedStreaks,
+);
+
 export default crons;

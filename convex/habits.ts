@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 
 export const createHabit = mutation({
@@ -68,7 +68,24 @@ export const completeHabit = mutation({
     // Update streak
     const habit = await ctx.db.get(args.habitId);
     if (habit) {
-      const newStreak = habit.currentStreak + 1;
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfYesterday = startOfToday.getTime() - 86400000;
+      const startOfTodayTs = startOfToday.getTime();
+
+      // Check if there is a completion for yesterday
+      const yesterdayCompletion = await ctx.db
+        .query("habitCompletions")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("habitId"), args.habitId),
+            q.gte(q.field("completedAt"), startOfYesterday),
+            q.lt(q.field("completedAt"), startOfTodayTs)
+          )
+        )
+        .first();
+
+      const newStreak = yesterdayCompletion ? habit.currentStreak + 1 : 1;
       await ctx.db.patch(args.habitId, {
         currentStreak: newStreak,
         longestStreak: Math.max(habit.longestStreak, newStreak),
@@ -85,5 +102,34 @@ export const getHabitWithStreak = query({
     const habit = await ctx.db.get(args.habitId);
     if (!habit) return null;
     return habit;
+  },
+});
+
+export const resetMissedStreaks = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startOfYesterday = startOfToday.getTime() - 86400000;
+    const startOfTodayTs = startOfToday.getTime();
+
+    const habits = await ctx.db.query("habits").collect();
+    for (const habit of habits) {
+      if (habit.currentStreak === 0) continue;
+      // Check if completed yesterday
+      const yesterdayCompletion = await ctx.db
+        .query("habitCompletions")
+        .filter((q) =>
+          q.and(
+            q.eq(q.field("habitId"), habit._id),
+            q.gte(q.field("completedAt"), startOfYesterday),
+            q.lt(q.field("completedAt"), startOfTodayTs)
+          )
+        )
+        .first();
+      if (!yesterdayCompletion) {
+        await ctx.db.patch(habit._id, { currentStreak: 0 });
+      }
+    }
   },
 });
