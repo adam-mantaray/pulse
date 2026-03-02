@@ -10,6 +10,7 @@
 
 import type * as agentActivity from "../agentActivity.js";
 import type * as agentMessages from "../agentMessages.js";
+import type * as agents from "../agents.js";
 import type * as crons from "../crons.js";
 import type * as habitCompletions from "../habitCompletions.js";
 import type * as habits from "../habits.js";
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   agentActivity: typeof agentActivity;
   agentMessages: typeof agentMessages;
+  agents: typeof agents;
   crons: typeof crons;
   habitCompletions: typeof habitCompletions;
   habits: typeof habits;

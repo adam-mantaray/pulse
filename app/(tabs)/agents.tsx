@@ -13,40 +13,83 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Send, ArrowLeft, Circle } from 'lucide-react-native';
 
-const AGENTS = [
-  { name: 'adam', label: 'Adam', role: 'Manager', color: '#2D5F3F' },
-  { name: 'tarek', label: 'Tarek', role: 'Builder', color: '#3A7D53' },
-  { name: 'rami', label: 'Rami', role: 'Builder', color: '#4A8B5E' },
-  { name: 'nadia', label: 'Nadia', role: 'QA', color: '#8B6E4E' },
-  { name: 'youssef', label: 'Youssef', role: 'Analyst', color: '#C49A3F' },
+// Agent colors by index for consistent styling
+const AGENT_COLORS = [
+  '#2D5F3F', '#3A7D53', '#4A8B5E', '#8B6E4E', '#C49A3F',
+  '#5C4A35', '#6B6558', '#2D2A23', '#A09A8C',
 ];
 
-function AgentList({ onSelect }: { onSelect: (name: string) => void }) {
+type AgentInfo = {
+  name: string;
+  label: string;
+  role: string;
+  color: string;
+  emoji: string;
+  status: string;
+  currentTask?: string;
+};
+
+function AgentList({ onSelect }: { onSelect: (agent: AgentInfo) => void }) {
   const conversations = useQuery(api.agentMessages.listConversations);
+  const registeredAgents = useQuery(api.agents.list);
+
+  // Build agent list from Convex (dynamic)
+  const agents: AgentInfo[] = (registeredAgents ?? []).map((a, i) => ({
+    name: a.agentId,
+    label: a.name,
+    role: a.role || a.codename,
+    color: AGENT_COLORS[i % AGENT_COLORS.length],
+    emoji: a.emoji,
+    status: a.status,
+    currentTask: a.currentTask,
+  }));
+
+  if (!registeredAgents) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Agents</Text>
+        <Text style={styles.loadingText}>Loading agents...</Text>
+      </View>
+    );
+  }
+
+  if (agents.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Agents</Text>
+        <Text style={styles.loadingText}>No agents registered yet. Sync from OpenClaw to populate.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Agents</Text>
-      {AGENTS.map((agent) => {
+      {agents.map((agent) => {
         const conv = conversations?.find((c) => c.agentName === agent.name);
         return (
           <Pressable
             key={agent.name}
             style={styles.agentRow}
-            onPress={() => onSelect(agent.name)}
+            onPress={() => onSelect(agent)}
           >
             <View style={[styles.avatar, { backgroundColor: agent.color }]}>
               <Text style={styles.avatarText}>
-                {agent.label[0]}
+                {agent.emoji || agent.label[0]}
               </Text>
             </View>
             <View style={styles.agentInfo}>
               <View style={styles.agentHeader}>
                 <Text style={styles.agentName}>{agent.label}</Text>
                 <Text style={styles.agentRole}>{agent.role}</Text>
+                {agent.status === 'active' && (
+                  <Circle size={8} fill="#3A7D53" color="#3A7D53" />
+                )}
               </View>
               <Text style={styles.lastMessage} numberOfLines={1}>
-                {conv?.lastMessage ?? 'No messages yet'}
+                {agent.currentTask
+                  ? agent.currentTask
+                  : conv?.lastMessage ?? 'No messages yet'}
               </Text>
             </View>
             {(conv?.unread ?? 0) > 0 && (
@@ -62,18 +105,18 @@ function AgentList({ onSelect }: { onSelect: (name: string) => void }) {
 }
 
 function ChatView({
-  agentName,
+  agent,
   onBack,
 }: {
-  agentName: string;
+  agent: AgentInfo;
   onBack: () => void;
 }) {
   const [text, setText] = useState('');
+  const agentName = agent.name;
   const messages = useQuery(api.agentMessages.listByAgent, { agentName });
   const sendMessage = useMutation(api.agentMessages.send);
   const markRead = useMutation(api.agentMessages.markRead);
   const flatListRef = useRef<FlatList>(null);
-  const agent = AGENTS.find((a) => a.name === agentName)!;
 
   React.useEffect(() => {
     markRead({ agentName });
@@ -173,12 +216,12 @@ function ChatView({
 }
 
 export default function AgentsScreen() {
-  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AgentInfo | null>(null);
 
   if (selectedAgent) {
     return (
       <ChatView
-        agentName={selectedAgent}
+        agent={selectedAgent}
         onBack={() => setSelectedAgent(null)}
       />
     );
@@ -336,6 +379,14 @@ const styles = StyleSheet.create({
     color: '#A09A8C',
     marginTop: 4,
     alignSelf: 'flex-end',
+  },
+  loadingText: {
+    fontFamily: 'DMSans-Regular',
+    fontSize: 15,
+    color: '#A09A8C',
+    textAlign: 'center',
+    marginTop: 40,
+    paddingHorizontal: 20,
   },
   emptyChat: {
     flex: 1,

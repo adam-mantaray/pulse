@@ -7,6 +7,7 @@ import { Box, Text } from '../design/primitives';
 interface AgentAvatarProps {
   name: string;
   isActive: boolean;
+  emoji?: string;
   onPress?: () => void;
 }
 
@@ -14,7 +15,7 @@ function getInitials(name: string): string {
   return name.charAt(0).toUpperCase();
 }
 
-export default function AgentAvatar({ name, isActive, onPress }: AgentAvatarProps) {
+export default function AgentAvatar({ name, isActive, emoji, onPress }: AgentAvatarProps) {
   const theme = useTheme<Theme>();
 
   return (
@@ -28,7 +29,7 @@ export default function AgentAvatar({ name, isActive, onPress }: AgentAvatarProp
         justifyContent="center"
       >
         <Text variant="subheading" color="accent">
-          {getInitials(name)}
+          {emoji || getInitials(name)}
         </Text>
         {/* Status dot */}
         <Box

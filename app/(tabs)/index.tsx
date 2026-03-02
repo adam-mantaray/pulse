@@ -13,14 +13,8 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { useHabits } from '../../src/hooks/useHabits';
 import { useGoals } from '../../src/hooks/useGoals';
 import { Id } from '../../convex/_generated/dataModel';
-
-const AGENTS = [
-  { name: 'Tarek', isActive: true },
-  { name: 'Nadia', isActive: true },
-  { name: 'Adam', isActive: true },
-  { name: 'Rami', isActive: false },
-  { name: 'Omar', isActive: false },
-];
+import { useQuery as useConvexQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -53,6 +47,7 @@ export default function DashboardScreen() {
   const { habits, completedHabitIds, completeHabit, isLoading: habitsLoading } = useHabits(typedUserId);
   const { objectives, isLoading: goalsLoading } = useGoals(typedUserId, quarter);
   const [refreshing, setRefreshing] = React.useState(false);
+  const registeredAgents = useConvexQuery(api.agents.list);
 
   const overallProgress = objectives.length > 0
     ? Math.round(objectives.reduce((sum, o) => sum + o.progress, 0) / objectives.length)
@@ -154,12 +149,13 @@ export default function DashboardScreen() {
             <Text variant="label" marginBottom="m">
               AGENT TEAM
             </Text>
-            <Box flexDirection="row" justifyContent="center">
-              {AGENTS.map((agent) => (
+            <Box flexDirection="row" justifyContent="center" flexWrap="wrap">
+              {(registeredAgents ?? []).map((agent) => (
                 <AgentAvatar
-                  key={agent.name}
+                  key={agent.agentId}
                   name={agent.name}
-                  isActive={agent.isActive}
+                  isActive={agent.status === 'active'}
+                  emoji={agent.emoji}
                 />
               ))}
             </Box>

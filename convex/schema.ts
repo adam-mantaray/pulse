@@ -78,6 +78,17 @@ export default defineSchema({
     createdAt: v.number(),
   }).index("by_date", ["date", "type"]),
 
+  agents: defineTable({
+    agentId: v.string(),
+    name: v.string(),
+    codename: v.string(),
+    emoji: v.string(),
+    role: v.string(),
+    status: v.union(v.literal("active"), v.literal("idle"), v.literal("offline")),
+    currentTask: v.optional(v.string()),
+    lastSeen: v.number(),
+  }).index("by_agentId", ["agentId"]),
+
   linearCache: defineTable({
     projectId: v.string(),
     totalTasks: v.number(),

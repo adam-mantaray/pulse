@@ -20,7 +20,9 @@ export const listByAgent = query({
 // List latest message per agent (for chat list preview)
 export const listConversations = query({
   handler: async (ctx) => {
-    const agents = ["adam", "tarek", "rami", "nadia", "youssef"];
+    // Dynamic: pull agent IDs from the agents table
+    const registeredAgents = await ctx.db.query("agents").collect();
+    const agents = registeredAgents.map((a) => a.agentId);
     const conversations = [];
 
     for (const agentName of agents) {
