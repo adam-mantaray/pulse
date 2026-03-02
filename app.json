@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.mantaray.pulse"
+      "bundleIdentifier": "com.mantaray.pulse",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +39,21 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/90d59498-a9f1-4eb0-8527-e4bbfb49fb8e",
+      "enabled": true,
+      "fallbackToCacheTimeout": 3000
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "90d59498-a9f1-4eb0-8527-e4bbfb49fb8e"
+      }
+    },
+    "owner": "adam-mantaray"
   }
 }
