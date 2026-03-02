@@ -5,9 +5,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider } from '../src/design/ThemeProvider';
 
-// Placeholder URL for local dev — replace with real Convex deployment URL
 const CONVEX_URL =
-  process.env.EXPO_PUBLIC_CONVEX_URL ?? 'https://placeholder.convex.cloud';
+  process.env.EXPO_PUBLIC_CONVEX_URL ??
+  'https://harmless-penguin-324.eu-west-1.convex.cloud';
 
 const convex = new ConvexReactClient(CONVEX_URL);
 

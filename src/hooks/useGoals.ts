@@ -3,6 +3,7 @@ import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 
 export function useGoals(userId: Id<"users"> | null, quarter: string) {
+  // objectives now includes nested keyResults and calculated progress
   const objectives = useQuery(
     api.objectives.listObjectives,
     userId ? { userId, quarter } : "skip"
@@ -30,7 +31,7 @@ export function useGoals(userId: Id<"users"> | null, quarter: string) {
       objectiveId,
       title,
       manualTracking: !options?.linearProjectId,
-      targetValue: options?.targetValue,
+      targetValue: options?.targetValue ?? 100,
       linearProjectId: options?.linearProjectId,
       dueDate: options?.dueDate,
     });

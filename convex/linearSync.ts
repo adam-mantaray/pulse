@@ -1,4 +1,4 @@
-import { action, internalMutation } from "./_generated/server";
+import { action, internalAction, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
@@ -79,7 +79,7 @@ export const recalculateObjectiveProgress = internalMutation({
 });
 
 // Sync action that queries Linear GraphQL API
-export const syncLinearProjects = action({
+export const syncLinearProjects = internalAction({
   handler: async (ctx) => {
     const apiKey = process.env.LINEAR_API_KEY;
     if (!apiKey) {
@@ -89,7 +89,7 @@ export const syncLinearProjects = action({
 
     const query = `
       query {
-        team(id: "MAN") {
+        team(id: "b4b8547a-0a2a-4414-9a98-4d7e148c5bb3") {
           projects {
             nodes {
               id

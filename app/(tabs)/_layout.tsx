@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { Home, Target, Activity, Calendar } from 'lucide-react-native';
+import { Home, Target, Activity, Calendar, MessageCircle } from 'lucide-react-native';
 import { Theme } from '../../src/design/theme';
 
 export default function TabLayout() {
@@ -53,6 +53,13 @@ export default function TabLayout() {
         options={{
           title: 'Timeline',
           tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="agents"
+        options={{
+          title: 'Agents',
+          tabBarIcon: ({ color, size }) => <MessageCircle size={size} color={color} />,
         }}
       />
     </Tabs>
