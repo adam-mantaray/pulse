@@ -1,0 +1,89 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const createHabit = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    emoji: v.string(),
+    frequency: v.union(v.literal("daily"), v.literal("weekdays"), v.literal("custom")),
+    customDays: v.optional(v.array(v.number())),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("habits", {
+      ...args,
+      currentStreak: 0,
+      longestStreak: 0,
+      freezesUsed: 0,
+      isActive: true,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const listHabits = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("habits")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+  },
+});
+
+export const completeHabit = mutation({
+  args: {
+    habitId: v.id("habits"),
+    date: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Check if already completed today
+    const existing = await ctx.db
+      .query("habitCompletions")
+      .withIndex("by_habit_date", (q) =>
+        q.eq("habitId", args.habitId).eq("date", args.date)
+      )
+      .first();
+
+    if (existing) {
+      // Toggle off - delete completion and decrement streak
+      await ctx.db.delete(existing._id);
+      const habit = await ctx.db.get(args.habitId);
+      if (habit && habit.currentStreak > 0) {
+        await ctx.db.patch(args.habitId, {
+          currentStreak: habit.currentStreak - 1,
+        });
+      }
+      return { completed: false };
+    }
+
+    // Record completion
+    await ctx.db.insert("habitCompletions", {
+      habitId: args.habitId,
+      date: args.date,
+      completedAt: Date.now(),
+    });
+
+    // Update streak
+    const habit = await ctx.db.get(args.habitId);
+    if (habit) {
+      const newStreak = habit.currentStreak + 1;
+      await ctx.db.patch(args.habitId, {
+        currentStreak: newStreak,
+        longestStreak: Math.max(habit.longestStreak, newStreak),
+      });
+    }
+
+    return { completed: true };
+  },
+});
+
+export const getHabitWithStreak = query({
+  args: { habitId: v.id("habits") },
+  handler: async (ctx, args) => {
+    const habit = await ctx.db.get(args.habitId);
+    if (!habit) return null;
+    return habit;
+  },
+});
