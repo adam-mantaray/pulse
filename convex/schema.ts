@@ -8,6 +8,7 @@ export default defineSchema({
     passwordHash: v.string(),
     timezone: v.string(),
     createdAt: v.number(),
+    activeHaradaChartId: v.optional(v.id("haradaCharts")),
   }).index("by_email", ["email"]),
 
   objectives: defineTable({
@@ -23,14 +24,24 @@ export default defineSchema({
   keyResults: defineTable({
     objectiveId: v.id("objectives"),
     title: v.string(),
+    trackingType: v.optional(
+      v.union(
+        v.literal("numeric"),
+        v.literal("linear"),
+        v.literal("manual"),
+      )
+    ),
     targetValue: v.optional(v.number()),
     currentValue: v.optional(v.number()),
     progress: v.number(),
     linearProjectId: v.optional(v.string()),
-    manualTracking: v.boolean(),
+    manualTracking: v.optional(v.boolean()),
     dueDate: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    haradaChartId: v.optional(v.id("haradaCharts")),
+    haradaSubGoalIndex: v.optional(v.number()),
+    haradaActionIndex: v.optional(v.number()),
   }).index("by_objective", ["objectiveId"]),
 
   habits: defineTable({
@@ -44,6 +55,9 @@ export default defineSchema({
     freezesUsed: v.number(),
     isActive: v.boolean(),
     createdAt: v.number(),
+    haradaChartId: v.optional(v.id("haradaCharts")),
+    haradaSubGoalIndex: v.optional(v.number()),
+    promotedFromActionIndex: v.optional(v.number()),
   }).index("by_user", ["userId"]),
 
   habitCompletions: defineTable({
@@ -94,11 +108,49 @@ export default defineSchema({
     userId: v.id("users"),
     title: v.string(),
     mainGoal: v.string(),
-    subGoals: v.array(v.string()),        // 8 sub-goals
-    actions: v.array(v.array(v.string())), // 8 arrays of 8 actions each
+    subGoals: v.array(v.string()),
+    actions: v.array(v.array(v.string())),
+    actionsDone: v.optional(v.array(v.array(v.boolean()))),
+    isActive: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user", ["userId"]),
+  }).index("by_user", ["userId"])
+    .index("by_user_active", ["userId", "isActive"]),
+
+  haradaTasks: defineTable({
+    userId: v.id("users"),
+    chartId: v.id("haradaCharts"),
+    subGoalIndex: v.number(),
+    actionIndex: v.number(),
+    title: v.string(),
+    notes: v.optional(v.string()),
+    trackingType: v.union(
+      v.literal("manual"),
+      v.literal("linear"),
+      v.literal("agent"),
+    ),
+    status: v.union(
+      v.literal("todo"),
+      v.literal("in_progress"),
+      v.literal("fleshing_out"),
+      v.literal("pending_review"),
+      v.literal("approved"),
+      v.literal("executing"),
+      v.literal("done"),
+    ),
+    linearIssueId: v.optional(v.string()),
+    assignedAgentName: v.optional(v.string()),
+    fleshOutPlan: v.optional(v.string()),
+    fleshOutAt: v.optional(v.number()),
+    approvedAt: v.optional(v.number()),
+    executionNotes: v.optional(v.string()),
+    completedAt: v.optional(v.number()),
+    sortOrder: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_chart_action", ["chartId", "subGoalIndex", "actionIndex"])
+    .index("by_user", ["userId"])
+    .index("by_agent_status", ["assignedAgentName", "status"]),
 
   linearCache: defineTable({
     projectId: v.string(),

@@ -15,6 +15,7 @@ import type * as crons from "../crons.js";
 import type * as habitCompletions from "../habitCompletions.js";
 import type * as habits from "../habits.js";
 import type * as harada from "../harada.js";
+import type * as haradaTasks from "../haradaTasks.js";
 import type * as http from "../http.js";
 import type * as keyResults from "../keyResults.js";
 import type * as linearSync from "../linearSync.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   habitCompletions: typeof habitCompletions;
   habits: typeof habits;
   harada: typeof harada;
+  haradaTasks: typeof haradaTasks;
   http: typeof http;
   keyResults: typeof keyResults;
   linearSync: typeof linearSync;

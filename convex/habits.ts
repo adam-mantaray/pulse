@@ -21,6 +21,36 @@ export const createHabit = mutation({
   },
 });
 
+export const createFromHarada = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+    emoji: v.string(),
+    frequency: v.union(v.literal("daily"), v.literal("weekdays"), v.literal("custom")),
+    customDays: v.optional(v.array(v.number())),
+    haradaChartId: v.id("haradaCharts"),
+    haradaSubGoalIndex: v.number(),
+    promotedFromActionIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("habits", {
+      userId: args.userId,
+      name: args.name,
+      emoji: args.emoji,
+      frequency: args.frequency,
+      customDays: args.customDays,
+      haradaChartId: args.haradaChartId,
+      haradaSubGoalIndex: args.haradaSubGoalIndex,
+      promotedFromActionIndex: args.promotedFromActionIndex,
+      currentStreak: 0,
+      longestStreak: 0,
+      freezesUsed: 0,
+      isActive: true,
+      createdAt: Date.now(),
+    });
+  },
+});
+
 export const listHabits = query({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -29,6 +59,32 @@ export const listHabits = query({
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .filter((q) => q.eq(q.field("isActive"), true))
       .collect();
+  },
+});
+
+export const listWithContext = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    const habits = await ctx.db
+      .query("habits")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .collect();
+
+    const enriched = await Promise.all(
+      habits.map(async (h) => {
+        let subGoalLabel: string | null = null;
+        if (h.haradaChartId && h.haradaSubGoalIndex !== undefined) {
+          const chart = await ctx.db.get(h.haradaChartId);
+          if (chart) {
+            subGoalLabel = chart.subGoals[h.haradaSubGoalIndex] || null;
+          }
+        }
+        return { ...h, subGoalLabel };
+      })
+    );
+
+    return enriched;
   },
 });
 
