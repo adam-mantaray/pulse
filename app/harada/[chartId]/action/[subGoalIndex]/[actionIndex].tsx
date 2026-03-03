@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { useTheme } from '@shopify/restyle';
 import * as Haptics from 'expo-haptics';
-import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Check, Plus } from 'lucide-react-native';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { Theme } from '../../../../../src/design/theme';
@@ -23,12 +23,6 @@ const FREQUENCY_OPTIONS: Array<{ label: string; value: 'daily' | 'weekdays' | 'c
   { label: 'Daily', value: 'daily' },
   { label: 'Weekdays', value: 'weekdays' },
   { label: 'Custom', value: 'custom' },
-];
-
-const TRACKING_TYPES: Array<{ label: string; value: 'manual' | 'linear' | 'agent' }> = [
-  { label: 'Manual', value: 'manual' },
-  { label: 'Auto (Linear)', value: 'linear' },
-  { label: 'Agent', value: 'agent' },
 ];
 
 const KR_TRACKING_TYPES: Array<{ label: string; value: 'numeric' | 'manual' }> = [

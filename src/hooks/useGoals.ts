@@ -25,13 +25,20 @@ export function useGoals(userId: Id<"users"> | null, quarter: string) {
       targetValue?: number;
       linearProjectId?: string;
       dueDate?: number;
+      trackingType?: 'numeric' | 'linear' | 'manual';
     }
   ) => {
+    // Determine tracking type: explicit > inferred from options
+    const trackingType = options?.trackingType
+      ?? (options?.linearProjectId ? 'linear' as const : undefined)
+      ?? (options?.targetValue ? 'numeric' as const : 'manual' as const);
+
     return await createKeyResultMutation({
       objectiveId,
       title,
-      manualTracking: !options?.linearProjectId,
-      targetValue: options?.targetValue ?? 100,
+      trackingType,
+      manualTracking: trackingType === 'manual',
+      targetValue: trackingType === 'numeric' ? (options?.targetValue ?? 100) : undefined,
       linearProjectId: options?.linearProjectId,
       dueDate: options?.dueDate,
     });

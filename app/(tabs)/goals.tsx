@@ -3,7 +3,7 @@ import { ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-nat
 import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@shopify/restyle';
-import { useQuery } from 'convex/react';
+import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Theme } from '../../src/design/theme';
@@ -24,8 +24,12 @@ function getQuarterOptions(): string[] {
   return quarters;
 }
 
+const KR_TRACKING_OPTIONS: Array<{ label: string; value: 'numeric' | 'manual' }> = [
+  { label: 'Numeric target', value: 'numeric' },
+  { label: 'Manual check-off', value: 'manual' },
+];
+
 export default function GoalsScreen() {
-  const theme = useTheme<Theme>();
   const sheetRef = useRef<BottomSheetComponent>(null);
   const { userId } = useAuth();
   const typedUserId = userId as Id<"users"> | null;
@@ -42,15 +46,22 @@ export default function GoalsScreen() {
   const [sheetMode, setSheetMode] = useState<'objective' | 'keyResult'>('objective');
   const [newTitle, setNewTitle] = useState('');
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<Id<"objectives"> | null>(null);
+  const [krTrackingType, setKRTrackingType] = useState<'numeric' | 'manual'>('numeric');
+  const [krTargetValue, setKRTargetValue] = useState('');
 
   const handleCreate = async () => {
     if (!newTitle.trim()) return;
     if (sheetMode === 'objective') {
       await createObjective(newTitle.trim());
     } else if (selectedObjectiveId) {
-      await createKeyResult(selectedObjectiveId, newTitle.trim());
+      await createKeyResult(selectedObjectiveId, newTitle.trim(), {
+        targetValue: krTrackingType === 'numeric' && krTargetValue
+          ? parseFloat(krTargetValue)
+          : undefined,
+      });
     }
     setNewTitle('');
+    setKRTargetValue('');
     sheetRef.current?.close();
   };
 
@@ -131,6 +142,8 @@ export default function GoalsScreen() {
                     setSheetMode('keyResult');
                     setSelectedObjectiveId(objective._id);
                     setNewTitle('');
+                    setKRTrackingType('numeric');
+                    setKRTargetValue('');
                     sheetRef.current?.snapToIndex(0);
                   }}
                 />
@@ -152,7 +165,7 @@ export default function GoalsScreen() {
         <BottomSheet
           sheetRef={sheetRef}
           onClose={() => {}}
-          snapPoints={['40%']}
+          snapPoints={[sheetMode === 'keyResult' ? '55%' : '40%']}
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -168,6 +181,40 @@ export default function GoalsScreen() {
                 value={newTitle}
                 onChangeText={setNewTitle}
               />
+
+              {/* Tracking type selector (KR only) */}
+              {sheetMode === 'keyResult' && (
+                <>
+                  <Box marginTop="md">
+                    <Text variant="label" marginBottom="s">
+                      TRACKING
+                    </Text>
+                    <Box flexDirection="row">
+                      {KR_TRACKING_OPTIONS.map((opt) => (
+                        <Box key={opt.value} marginRight="s">
+                          <Button
+                            label={opt.label}
+                            variant={krTrackingType === opt.value ? 'primary' : 'outline'}
+                            onPress={() => setKRTrackingType(opt.value)}
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+
+                  {krTrackingType === 'numeric' && (
+                    <Box marginTop="md">
+                      <Input
+                        label="TARGET VALUE"
+                        placeholder="e.g., 100"
+                        value={krTargetValue}
+                        onChangeText={setKRTargetValue}
+                      />
+                    </Box>
+                  )}
+                </>
+              )}
+
               <Box marginTop="xl">
                 <Button
                   label="Create"
@@ -198,11 +245,16 @@ interface ObjectiveCardProps {
 
 function ObjectiveCard({ objective, isExpanded, onToggle, onAddKeyResult }: ObjectiveCardProps) {
   const theme = useTheme<Theme>();
+  const toggleManualDone = useMutation(api.keyResults.toggleManualDone);
 
   // Query key results for this objective
   const keyResults = useQuery(api.keyResults.listKeyResults, {
     objectiveId: objective._id,
   });
+
+  const handleToggleManual = async (krId: Id<"keyResults">) => {
+    await toggleManualDone({ keyResultId: krId });
+  };
 
   return (
     <Box
@@ -247,28 +299,91 @@ function ObjectiveCard({ objective, isExpanded, onToggle, onAddKeyResult }: Obje
               No key results yet
             </Text>
           ) : (
-            keyResults.map((kr) => (
-              <Box
-                key={kr._id}
-                marginLeft="xl"
-                marginTop="s"
-                padding="m"
-                backgroundColor="secondaryBackground"
-                borderRadius="sm"
-              >
-                <Text variant="bodySmall" color="textPrimary">
-                  {kr.title}
-                </Text>
-                <Box marginTop="xs" flexDirection="row" alignItems="center">
-                  <Box flex={1}>
-                    <ProgressBar progress={kr.progress} height={4} />
+            keyResults.map((kr) => {
+              const isManual =
+                kr.trackingType === 'manual' ||
+                (!kr.trackingType && kr.manualTracking && !kr.targetValue);
+              const isDone = kr.progress >= 100;
+
+              return (
+                <Box
+                  key={kr._id}
+                  marginLeft="xl"
+                  marginTop="s"
+                  padding="m"
+                  backgroundColor="secondaryBackground"
+                  borderRadius="sm"
+                >
+                  <Box flexDirection="row" alignItems="center">
+                    <Box flex={1}>
+                      <Text variant="bodySmall" color="textPrimary">
+                        {kr.title}
+                      </Text>
+                    </Box>
+
+                    {/* Harada trace tag */}
+                    {kr.haradaChartId && (
+                      <Box
+                        backgroundColor="accentLight"
+                        paddingHorizontal="xs"
+                        paddingVertical="xs"
+                        borderRadius="sm"
+                        marginLeft="xs"
+                      >
+                        <Text variant="bodySmall" color="accent" style={{ fontSize: 9 }}>
+                          From Vision
+                        </Text>
+                      </Box>
+                    )}
                   </Box>
-                  <Text variant="bodySmall" color="textTertiary" marginLeft="s" style={{ fontSize: 11 }}>
-                    {Math.round(kr.progress)}%
-                  </Text>
+
+                  {isManual ? (
+                    <Pressable onPress={() => handleToggleManual(kr._id)}>
+                      <Box
+                        flexDirection="row"
+                        alignItems="center"
+                        marginTop="s"
+                        paddingVertical="xs"
+                      >
+                        <Box
+                          width={20}
+                          height={20}
+                          borderRadius="sm"
+                          borderWidth={2}
+                          borderColor={isDone ? 'success' : 'border'}
+                          backgroundColor={isDone ? 'success' : 'transparent'}
+                          alignItems="center"
+                          justifyContent="center"
+                          marginRight="s"
+                        >
+                          {isDone && (
+                            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' }}>
+                              {'✓'}
+                            </Text>
+                          )}
+                        </Box>
+                        <Text
+                          variant="bodySmall"
+                          color={isDone ? 'success' : 'textTertiary'}
+                          style={{ fontSize: 12 }}
+                        >
+                          {isDone ? 'Done' : 'Not done'}
+                        </Text>
+                      </Box>
+                    </Pressable>
+                  ) : (
+                    <Box marginTop="xs" flexDirection="row" alignItems="center">
+                      <Box flex={1}>
+                        <ProgressBar progress={kr.progress} height={4} />
+                      </Box>
+                      <Text variant="bodySmall" color="textTertiary" marginLeft="s" style={{ fontSize: 11 }}>
+                        {Math.round(kr.progress)}%
+                      </Text>
+                    </Box>
+                  )}
                 </Box>
-              </Box>
-            ))
+              );
+            })
           )}
           <Pressable onPress={onAddKeyResult}>
             <Box marginLeft="xl" marginTop="m">
