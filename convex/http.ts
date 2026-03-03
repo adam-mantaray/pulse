@@ -183,7 +183,7 @@ http.route({
       );
     }
 
-    await ctx.runMutation(api.haradaTasks.receiveFleshOut, { taskId, plan, agentName });
+    await ctx.runMutation(internal.haradaTasks.receiveFleshOut, { taskId, plan, agentName });
 
     return new Response(
       JSON.stringify({ ok: true }),
@@ -210,7 +210,7 @@ http.route({
       );
     }
 
-    await ctx.runMutation(api.haradaTasks.receiveComplete, { taskId, notes, agentName });
+    await ctx.runMutation(internal.haradaTasks.receiveComplete, { taskId, notes, agentName });
 
     return new Response(
       JSON.stringify({ ok: true }),

@@ -1,4 +1,4 @@
-import { query, mutation, action } from "./_generated/server";
+import { query, mutation, internalMutation, action } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 
@@ -171,8 +171,8 @@ export const markDone = mutation({
   },
 });
 
-// Called by agent HTTP endpoint when flesh-out plan is ready
-export const receiveFleshOut = mutation({
+// Called by agent HTTP endpoint when flesh-out plan is ready — internal only
+export const receiveFleshOut = internalMutation({
   args: {
     taskId: v.id("haradaTasks"),
     plan: v.string(),
@@ -204,8 +204,8 @@ export const approve = mutation({
   },
 });
 
-// Called by agent when execution is complete
-export const receiveComplete = mutation({
+// Called by agent when execution is complete — internal only
+export const receiveComplete = internalMutation({
   args: {
     taskId: v.id("haradaTasks"),
     notes: v.string(),

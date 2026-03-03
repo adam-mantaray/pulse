@@ -149,7 +149,7 @@ export default function ActionDetailScreen() {
     await createHabitFromHarada({
       userId: typedUserId,
       name: habitName.trim(),
-      emoji: habitEmoji || '',
+      emoji: habitEmoji.trim() || '🎯',
       frequency: habitFrequency,
       haradaChartId: typedChartId,
       haradaSubGoalIndex: subGoalIndex,
@@ -493,7 +493,7 @@ export default function ActionDetailScreen() {
 
               <Box marginTop="md">
                 <Input
-                  label="EMOJI"
+                  label="EMOJI (optional — defaults to 🎯)"
                   placeholder="e.g., 🏋️"
                   value={habitEmoji}
                   onChangeText={setHabitEmoji}

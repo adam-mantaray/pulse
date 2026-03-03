@@ -247,10 +247,18 @@ export const updateAction = mutation({
   },
 });
 
-// Delete a chart
+// Delete a chart — cascades to haradaTasks
 export const remove = mutation({
   args: { chartId: v.id("haradaCharts") },
   handler: async (ctx, args) => {
+    // Cascade-delete all tasks belonging to this chart
+    const tasks = await ctx.db
+      .query("haradaTasks")
+      .filter((q) => q.eq(q.field("chartId"), args.chartId))
+      .collect();
+    for (const task of tasks) {
+      await ctx.db.delete(task._id);
+    }
     await ctx.db.delete(args.chartId);
   },
 });
