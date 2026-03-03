@@ -5,7 +5,7 @@ import { Id } from '../../convex/_generated/dataModel';
 
 export function useHabits(userId: Id<"users"> | null) {
   const habits = useQuery(
-    api.habits.listHabits,
+    api.habits.listWithContext,
     userId ? { userId } : "skip"
   );
 

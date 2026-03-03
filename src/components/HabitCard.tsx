@@ -24,6 +24,7 @@ interface HabitCardProps {
   isCompleted: boolean;
   onComplete: () => void;
   variant?: 'mini' | 'full';
+  subGoalLabel?: string | null;
 }
 
 function getInitial(name: string): string {
@@ -35,6 +36,7 @@ export default function HabitCard({
   isCompleted,
   onComplete,
   variant = 'full',
+  subGoalLabel,
 }: HabitCardProps) {
   const theme = useTheme<Theme>();
   const scale = useSharedValue(1);
@@ -141,6 +143,15 @@ export default function HabitCard({
             >
               {habit.name}
             </Text>
+            {subGoalLabel ? (
+              <Text
+                variant="bodySmall"
+                color={isCompleted ? 'textOnAccent' : 'textTertiary'}
+                style={{ fontSize: 12 }}
+              >
+                {subGoalLabel}
+              </Text>
+            ) : null}
             {habit.currentStreak > 0 && (
               <Text
                 variant="bodySmall"

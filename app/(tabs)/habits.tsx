@@ -92,6 +92,7 @@ export default function HabitsScreen() {
                   isCompleted={completedHabitIds.has(habit._id)}
                   onComplete={() => completeHabit(habit._id)}
                   variant="full"
+                  subGoalLabel={'subGoalLabel' in habit ? (habit as { subGoalLabel: string | null }).subGoalLabel : null}
                 />
               ))
             )}
