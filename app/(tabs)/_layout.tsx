@@ -1,11 +1,23 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
-import { Home, Target, Activity, Calendar, MessageCircle, Grid3X3 } from 'lucide-react-native';
+import { useQuery } from 'convex/react';
+import { Home, Target, Activity, Grid3X3 } from 'lucide-react-native';
 import { Theme } from '../../src/design/theme';
+import { api } from '../../convex/_generated/api';
+import { useAuth } from '../../src/hooks/useAuth';
+import { Id } from '../../convex/_generated/dataModel';
 
 export default function TabLayout() {
   const theme = useTheme<Theme>();
+  const { userId } = useAuth();
+  const typedUserId = userId as Id<"users"> | null;
+
+  const pendingReview = useQuery(
+    api.haradaTasks.listPendingReview,
+    typedUserId ? { userId: typedUserId } : "skip"
+  );
+  const pendingCount = pendingReview?.length ?? 0;
 
   return (
     <Tabs
@@ -51,8 +63,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="harada"
         options={{
-          title: 'Harada',
+          title: 'Vision',
           tabBarIcon: ({ color, size }) => <Grid3X3 size={size} color={color} />,
+          tabBarBadge: pendingCount > 0 ? pendingCount : undefined,
+          tabBarBadgeStyle: pendingCount > 0 ? {
+            backgroundColor: theme.colors.danger,
+            fontSize: 10,
+            fontFamily: 'DMSans-SemiBold',
+          } : undefined,
         }}
       />
       <Tabs.Screen

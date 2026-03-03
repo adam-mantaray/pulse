@@ -3,13 +3,14 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  TextInput,
 } from 'react-native';
-import BottomSheetComponent, { BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { useTheme } from '@shopify/restyle';
 import * as Haptics from 'expo-haptics';
-import { ArrowLeft, Check, Plus } from 'lucide-react-native';
+import { ArrowLeft, Check, Plus, ChevronRight } from 'lucide-react-native';
 import { api } from '../../../../../convex/_generated/api';
 import { Id } from '../../../../../convex/_generated/dataModel';
 import { Theme } from '../../../../../src/design/theme';
@@ -245,6 +246,7 @@ export default function ActionDetailScreen() {
             {activeTasks.map((task) => (
               <Pressable
                 key={task._id}
+                onPress={() => router.push(`/harada/${chartId}/task/${task._id}` as never)}
                 onLongPress={() => handleDeleteTask(task._id, task.title)}
               >
                 <Box
@@ -255,7 +257,7 @@ export default function ActionDetailScreen() {
                   padding="m"
                   marginBottom="xs"
                   borderWidth={1}
-                  borderColor="border"
+                  borderColor={task.status === 'pending_review' ? 'warning' : 'border'}
                 >
                   <Pressable onPress={() => handleTaskDone(task._id)} style={{ marginRight: 10 }}>
                     <Box
@@ -280,16 +282,22 @@ export default function ActionDetailScreen() {
                   </Box>
                   {task.status !== 'todo' && task.status !== 'done' && (
                     <Box
-                      backgroundColor="accentLight"
+                      backgroundColor={task.status === 'pending_review' ? 'warning' : 'accentLight'}
                       paddingHorizontal="xs"
                       paddingVertical="xs"
                       borderRadius="sm"
+                      marginRight="xs"
                     >
-                      <Text variant="bodySmall" color="accent" style={{ fontSize: 10 }}>
-                        {task.status.replace('_', ' ')}
+                      <Text
+                        variant="bodySmall"
+                        color={task.status === 'pending_review' ? 'textOnAccent' : 'accent'}
+                        style={{ fontSize: 10 }}
+                      >
+                        {task.status.replace(/_/g, ' ')}
                       </Text>
                     </Box>
                   )}
+                  <ChevronRight size={16} color={theme.colors.textTertiary} />
                 </Box>
               </Pressable>
             ))}
@@ -298,6 +306,7 @@ export default function ActionDetailScreen() {
             {doneTasks.map((task) => (
               <Pressable
                 key={task._id}
+                onPress={() => router.push(`/harada/${chartId}/task/${task._id}` as never)}
                 onLongPress={() => handleDeleteTask(task._id, task.title)}
               >
                 <Box
@@ -324,13 +333,16 @@ export default function ActionDetailScreen() {
                   >
                     <Check size={14} color="#FFFFFF" />
                   </Box>
-                  <Text
-                    variant="bodySmall"
-                    color="textTertiary"
-                    style={{ textDecorationLine: 'line-through' }}
-                  >
-                    {task.title}
-                  </Text>
+                  <Box flex={1}>
+                    <Text
+                      variant="bodySmall"
+                      color="textTertiary"
+                      style={{ textDecorationLine: 'line-through' }}
+                    >
+                      {task.title}
+                    </Text>
+                  </Box>
+                  <ChevronRight size={16} color={theme.colors.textTertiary} />
                 </Box>
               </Pressable>
             ))}
