@@ -3,11 +3,10 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Dimensions,
   Alert,
 } from 'react-native';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -539,28 +538,36 @@ export default function HaradaScreen() {
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [newMainGoal, setNewMainGoal] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const handleCreate = async () => {
-    if (!newTitle.trim() || !typedUserId) return;
-    const chartId = await createChart({
-      userId: typedUserId,
-      title: newTitle.trim(),
-      mainGoal: newMainGoal.trim(),
-    });
-    setNewTitle('');
-    setNewMainGoal('');
-    sheetRef.current?.close();
-
-    const newChart: ChartData = {
-      _id: chartId,
-      title: newTitle.trim(),
-      mainGoal: newMainGoal.trim(),
-      subGoals: Array(8).fill(''),
-      actions: Array(8).fill(null).map(() => Array(8).fill('')),
-      actionsDone: Array(8).fill(null).map(() => Array(8).fill(false)),
-      isActive: true,
-    };
-    setSelectedChart(newChart);
+    if (!newTitle.trim() || !typedUserId || creating) return;
+    setCreating(true);
+    try {
+      const chartId = await createChart({
+        userId: typedUserId,
+        title: newTitle.trim(),
+        mainGoal: newMainGoal.trim(),
+      });
+      const title = newTitle.trim();
+      const mainGoal = newMainGoal.trim();
+      setNewTitle('');
+      setNewMainGoal('');
+      sheetRef.current?.close();
+      setSelectedChart({
+        _id: chartId,
+        title,
+        mainGoal,
+        subGoals: Array(8).fill(''),
+        actions: Array(8).fill(null).map(() => Array(8).fill('')),
+        actionsDone: Array(8).fill(null).map(() => Array(8).fill(false)),
+        isActive: true,
+      });
+    } catch (e) {
+      Alert.alert('Error', 'Could not create chart. Please try again.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleSetActive = async (chartId: Id<"haradaCharts">) => {
@@ -596,39 +603,57 @@ export default function HaradaScreen() {
       <BottomSheet
         sheetRef={sheetRef}
         onClose={() => {}}
-        snapPoints={['50%']}
+        snapPoints={['55%']}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
-          <Box padding="xl">
-            <Text variant="heading" marginBottom="md">
-              New Vision Chart
-            </Text>
-            <Input
-              label="CHART NAME"
-              placeholder="e.g., Life Vision 2026"
-              value={newTitle}
-              onChangeText={setNewTitle}
-            />
-            <Box marginTop="md">
-              <Input
-                label="MAIN GOAL (CENTER)"
-                placeholder="e.g., Build the life I want"
-                value={newMainGoal}
-                onChangeText={setNewMainGoal}
-              />
-            </Box>
-            <Box marginTop="xl">
-              <Button
-                label="Create Chart"
-                onPress={handleCreate}
-                disabled={!newTitle.trim()}
-              />
-            </Box>
-          </Box>
-        </KeyboardAvoidingView>
+        <Box padding="xl" flex={1}>
+          <Text variant="heading" marginBottom="md">
+            New Vision Chart
+          </Text>
+
+          <Text variant="label" marginBottom="xs">CHART NAME</Text>
+          <BottomSheetTextInput
+            placeholder="e.g., Life Vision 2026"
+            value={newTitle}
+            onChangeText={setNewTitle}
+            style={{
+              borderWidth: 1,
+              borderColor: '#D4CFC8',
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              fontFamily: 'DMSans-Regular',
+              fontSize: 16,
+              color: '#2C2A26',
+              backgroundColor: '#FFFFFF',
+              marginBottom: 16,
+            }}
+          />
+
+          <Text variant="label" marginBottom="xs">MAIN GOAL (CENTER)</Text>
+          <BottomSheetTextInput
+            placeholder="e.g., Build the life I want"
+            value={newMainGoal}
+            onChangeText={setNewMainGoal}
+            style={{
+              borderWidth: 1,
+              borderColor: '#D4CFC8',
+              borderRadius: 12,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              fontFamily: 'DMSans-Regular',
+              fontSize: 16,
+              color: '#2C2A26',
+              backgroundColor: '#FFFFFF',
+              marginBottom: 24,
+            }}
+          />
+
+          <Button
+            label={creating ? 'Creating…' : 'Create Chart'}
+            onPress={handleCreate}
+            disabled={!newTitle.trim() || creating}
+          />
+        </Box>
       </BottomSheet>
     </>
   );

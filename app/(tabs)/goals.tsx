@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, Pressable } from 'react-native';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@shopify/restyle';
@@ -165,65 +166,81 @@ export default function GoalsScreen() {
         <BottomSheet
           sheetRef={sheetRef}
           onClose={() => {}}
-          snapPoints={[sheetMode === 'keyResult' ? '55%' : '40%']}
+          snapPoints={[sheetMode === 'keyResult' ? '60%' : '45%']}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
-            <Box padding="xl">
-              <Text variant="heading" marginBottom="md">
-                {sheetMode === 'objective' ? 'New Objective' : 'New Key Result'}
-              </Text>
-              <Input
-                label="TITLE"
-                placeholder={sheetMode === 'objective' ? 'e.g., Launch Pulse MVP' : 'e.g., App in TestFlight by April'}
-                value={newTitle}
-                onChangeText={setNewTitle}
-              />
+          <Box padding="xl" flex={1}>
+            <Text variant="heading" marginBottom="md">
+              {sheetMode === 'objective' ? 'New Objective' : 'New Key Result'}
+            </Text>
 
-              {/* Tracking type selector (KR only) */}
-              {sheetMode === 'keyResult' && (
-                <>
-                  <Box marginTop="md">
-                    <Text variant="label" marginBottom="s">
-                      TRACKING
-                    </Text>
-                    <Box flexDirection="row">
-                      {KR_TRACKING_OPTIONS.map((opt) => (
-                        <Box key={opt.value} marginRight="s">
-                          <Button
-                            label={opt.label}
-                            variant={krTrackingType === opt.value ? 'primary' : 'outline'}
-                            onPress={() => setKRTrackingType(opt.value)}
-                          />
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
+            <Text variant="label" marginBottom="xs">TITLE</Text>
+            <BottomSheetTextInput
+              placeholder={sheetMode === 'objective' ? 'e.g., Launch Pulse MVP' : 'e.g., App in TestFlight by April'}
+              value={newTitle}
+              onChangeText={setNewTitle}
+              style={{
+                borderWidth: 1,
+                borderColor: '#D4CFC8',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontFamily: 'DMSans-Regular',
+                fontSize: 16,
+                color: '#2C2A26',
+                backgroundColor: '#FFFFFF',
+                marginBottom: 16,
+              }}
+            />
 
-                  {krTrackingType === 'numeric' && (
-                    <Box marginTop="md">
-                      <Input
-                        label="TARGET VALUE"
-                        placeholder="e.g., 100"
-                        value={krTargetValue}
-                        onChangeText={setKRTargetValue}
+            {sheetMode === 'keyResult' && (
+              <>
+                <Text variant="label" marginBottom="s">TRACKING</Text>
+                <Box flexDirection="row" marginBottom="md">
+                  {KR_TRACKING_OPTIONS.map((opt) => (
+                    <Box key={opt.value} marginRight="s">
+                      <Button
+                        label={opt.label}
+                        variant={krTrackingType === opt.value ? 'primary' : 'outline'}
+                        onPress={() => setKRTrackingType(opt.value)}
                       />
                     </Box>
-                  )}
-                </>
-              )}
+                  ))}
+                </Box>
 
-              <Box marginTop="xl">
-                <Button
-                  label="Create"
-                  onPress={handleCreate}
-                  disabled={!newTitle.trim()}
-                />
-              </Box>
+                {krTrackingType === 'numeric' && (
+                  <>
+                    <Text variant="label" marginBottom="xs">TARGET VALUE</Text>
+                    <BottomSheetTextInput
+                      placeholder="e.g., 100"
+                      value={krTargetValue}
+                      onChangeText={setKRTargetValue}
+                      keyboardType="numeric"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: '#D4CFC8',
+                        borderRadius: 12,
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        fontFamily: 'DMSans-Regular',
+                        fontSize: 16,
+                        color: '#2C2A26',
+                        backgroundColor: '#FFFFFF',
+                        marginBottom: 16,
+                      }}
+                    />
+                  </>
+                )}
+              </>
+            )}
+
+            <Box marginTop="m">
+              <Button
+                label="Create"
+                onPress={handleCreate}
+                disabled={!newTitle.trim()}
+              />
             </Box>
-          </KeyboardAvoidingView>
+          </Box>
         </BottomSheet>
       </Box>
     </SafeArea>

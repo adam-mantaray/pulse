@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import GorhomBottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
+  BottomSheetScrollView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useTheme } from '@shopify/restyle';
@@ -12,6 +13,7 @@ interface BottomSheetProps {
   snapPoints?: (string | number)[];
   onClose: () => void;
   sheetRef: React.RefObject<GorhomBottomSheet | null>;
+  scrollable?: boolean;
 }
 
 export default function BottomSheet({
@@ -19,6 +21,7 @@ export default function BottomSheet({
   snapPoints: customSnapPoints,
   onClose,
   sheetRef,
+  scrollable = false,
 }: BottomSheetProps) {
   const theme = useTheme<Theme>();
   const snapPoints = useMemo(
@@ -46,6 +49,9 @@ export default function BottomSheet({
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       handleIndicatorStyle={{
         backgroundColor: theme.colors.border,
         width: 40,
@@ -56,9 +62,15 @@ export default function BottomSheet({
         borderTopRightRadius: theme.borderRadii.xl,
       }}
     >
-      <BottomSheetView style={{ flex: 1 }}>
-        {children}
-      </BottomSheetView>
+      {scrollable ? (
+        <BottomSheetScrollView style={{ flex: 1 }}>
+          {children}
+        </BottomSheetScrollView>
+      ) : (
+        <BottomSheetView style={{ flex: 1 }}>
+          {children}
+        </BottomSheetView>
+      )}
     </GorhomBottomSheet>
   );
 }

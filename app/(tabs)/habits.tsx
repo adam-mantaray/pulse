@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView } from 'react-native';
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { Box, Text, SafeArea, Button, Input, BottomSheet } from '../../src/design/primitives';
 import HabitCard from '../../src/components/HabitCard';
@@ -106,53 +107,51 @@ export default function HabitsScreen() {
         <BottomSheet
           sheetRef={sheetRef}
           onClose={() => {}}
-          snapPoints={['50%']}
+          snapPoints={['55%']}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
-            <Box padding="xl">
-              <Text variant="heading" marginBottom="md">
-                New Habit
-              </Text>
+          <Box padding="xl" flex={1}>
+            <Text variant="heading" marginBottom="md">
+              New Habit
+            </Text>
 
-              {/* Name Input */}
-              <Input
-                label="HABIT NAME"
-                placeholder="e.g., Morning workout"
-                value={newName}
-                onChangeText={setNewName}
-              />
+            <Text variant="label" marginBottom="xs">HABIT NAME</Text>
+            <BottomSheetTextInput
+              placeholder="e.g., Morning workout"
+              value={newName}
+              onChangeText={setNewName}
+              style={{
+                borderWidth: 1,
+                borderColor: '#D4CFC8',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontFamily: 'DMSans-Regular',
+                fontSize: 16,
+                color: '#2C2A26',
+                backgroundColor: '#FFFFFF',
+                marginBottom: 16,
+              }}
+            />
 
-              {/* Frequency Selector */}
-              <Box marginTop="md">
-                <Text variant="label" marginBottom="s">
-                  FREQUENCY
-                </Text>
-                <Box flexDirection="row">
-                  {FREQUENCY_OPTIONS.map((freq) => (
-                    <Box key={freq.value} marginRight="s">
-                      <Button
-                        label={freq.label}
-                        variant={selectedFrequency === freq.value ? 'primary' : 'outline'}
-                        onPress={() => setSelectedFrequency(freq.value)}
-                      />
-                    </Box>
-                  ))}
+            <Text variant="label" marginBottom="s">FREQUENCY</Text>
+            <Box flexDirection="row" marginBottom="xl">
+              {FREQUENCY_OPTIONS.map((freq) => (
+                <Box key={freq.value} marginRight="s">
+                  <Button
+                    label={freq.label}
+                    variant={selectedFrequency === freq.value ? 'primary' : 'outline'}
+                    onPress={() => setSelectedFrequency(freq.value)}
+                  />
                 </Box>
-              </Box>
-
-              {/* Create Button */}
-              <Box marginTop="xl">
-                <Button
-                  label="Create Habit"
-                  onPress={handleCreateHabit}
-                  disabled={!newName.trim()}
-                />
-              </Box>
+              ))}
             </Box>
-          </KeyboardAvoidingView>
+
+            <Button
+              label="Create Habit"
+              onPress={handleCreateHabit}
+              disabled={!newName.trim()}
+            />
+          </Box>
         </BottomSheet>
       </Box>
     </SafeArea>

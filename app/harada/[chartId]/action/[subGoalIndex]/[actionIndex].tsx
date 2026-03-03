@@ -2,12 +2,9 @@ import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   Pressable,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
 } from 'react-native';
-import BottomSheetComponent from '@gorhom/bottom-sheet';
+import BottomSheetComponent, { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from 'convex/react';
 import { useTheme } from '@shopify/restyle';
@@ -470,10 +467,6 @@ export default function ActionDetailScreen() {
           onClose={() => {}}
           snapPoints={['60%']}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
             <Box padding="xl">
               <Text variant="heading" marginBottom="md">
                 Create Habit
@@ -520,7 +513,7 @@ export default function ActionDetailScreen() {
                 />
               </Box>
             </Box>
-          </KeyboardAvoidingView>
+
         </BottomSheet>
 
         {/* KR Promote Bottom Sheet */}
@@ -529,10 +522,6 @@ export default function ActionDetailScreen() {
           onClose={() => {}}
           snapPoints={['70%']}
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
             <ScrollView>
               <Box padding="xl">
                 <Text variant="heading" marginBottom="md">
@@ -622,7 +611,7 @@ export default function ActionDetailScreen() {
                 </Box>
               </Box>
             </ScrollView>
-          </KeyboardAvoidingView>
+
         </BottomSheet>
       </Box>
     </SafeArea>
