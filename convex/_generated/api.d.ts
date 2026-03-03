@@ -14,11 +14,11 @@ import type * as agents from "../agents.js";
 import type * as crons from "../crons.js";
 import type * as habitCompletions from "../habitCompletions.js";
 import type * as habits from "../habits.js";
+import type * as harada from "../harada.js";
 import type * as http from "../http.js";
 import type * as keyResults from "../keyResults.js";
 import type * as linearSync from "../linearSync.js";
 import type * as objectives from "../objectives.js";
-import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -34,11 +34,11 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   habitCompletions: typeof habitCompletions;
   habits: typeof habits;
+  harada: typeof harada;
   http: typeof http;
   keyResults: typeof keyResults;
   linearSync: typeof linearSync;
   objectives: typeof objectives;
-  seed: typeof seed;
   users: typeof users;
 }>;
 

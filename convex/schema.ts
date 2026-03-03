@@ -68,6 +68,7 @@ export default defineSchema({
     content: v.string(),
     timestamp: v.number(),
     read: v.boolean(),
+    delivered: v.optional(v.boolean()),
   }).index("by_agent", ["agentName", "timestamp"]),
 
   briefings: defineTable({
@@ -88,6 +89,16 @@ export default defineSchema({
     currentTask: v.optional(v.string()),
     lastSeen: v.number(),
   }).index("by_agentId", ["agentId"]),
+
+  haradaCharts: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    mainGoal: v.string(),
+    subGoals: v.array(v.string()),        // 8 sub-goals
+    actions: v.array(v.array(v.string())), // 8 arrays of 8 actions each
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
 
   linearCache: defineTable({
     projectId: v.string(),

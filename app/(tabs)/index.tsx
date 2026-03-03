@@ -48,7 +48,6 @@ export default function DashboardScreen() {
   const { objectives, isLoading: goalsLoading } = useGoals(typedUserId, quarter);
   const [refreshing, setRefreshing] = React.useState(false);
   const registeredAgents = useConvexQuery(api.agents.list);
-
   const overallProgress = objectives.length > 0
     ? Math.round(objectives.reduce((sum, o) => sum + o.progress, 0) / objectives.length)
     : 0;
@@ -155,11 +154,11 @@ export default function DashboardScreen() {
                   key={agent.agentId}
                   name={agent.name}
                   isActive={agent.status === 'active'}
-                  emoji={agent.emoji}
                 />
               ))}
             </Box>
           </Box>
+
         </ScrollView>
 
         {/* FAB */}

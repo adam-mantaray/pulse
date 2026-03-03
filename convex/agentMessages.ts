@@ -77,6 +77,7 @@ export const send = mutation({
       content: args.content,
       timestamp: Date.now(),
       read: true,
+      delivered: false,
     });
   },
 });
@@ -98,6 +99,33 @@ export const markRead = mutation({
 
     for (const msg of unread) {
       await ctx.db.patch(msg._id, { read: true });
+    }
+  },
+});
+
+// Poll for undelivered outbound messages (called by OpenClaw bridge)
+export const pollOutbound = query({
+  handler: async (ctx) => {
+    const messages = await ctx.db
+      .query("agentMessages")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("direction"), "outbound"),
+          q.neq(q.field("delivered"), true)
+        )
+      )
+      .order("asc")
+      .take(20);
+    return messages;
+  },
+});
+
+// Mark outbound messages as delivered
+export const markDelivered = mutation({
+  args: { messageIds: v.array(v.id("agentMessages")) },
+  handler: async (ctx, args) => {
+    for (const id of args.messageIds) {
+      await ctx.db.patch(id, { delivered: true });
     }
   },
 });

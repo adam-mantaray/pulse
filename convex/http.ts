@@ -106,6 +106,50 @@ http.route({
   }),
 });
 
+// Poll outbound messages (OpenClaw bridge picks these up)
+http.route({
+  path: "/api/pulse/messages/poll",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    const authError = verifyWebhookSecret(request);
+    if (authError) return authError;
+
+    const messages = await ctx.runQuery(api.agentMessages.pollOutbound, {});
+
+    return new Response(
+      JSON.stringify({ messages }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
+// Mark outbound messages as delivered
+http.route({
+  path: "/api/pulse/messages/ack",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authError = verifyWebhookSecret(request);
+    if (authError) return authError;
+
+    const body = await request.json();
+    const { messageIds } = body;
+
+    if (!messageIds || !Array.isArray(messageIds)) {
+      return new Response(
+        JSON.stringify({ error: "Missing required field: messageIds (array)" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    await ctx.runMutation(api.agentMessages.markDelivered, { messageIds });
+
+    return new Response(
+      JSON.stringify({ success: true, acknowledged: messageIds.length }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
 // Health check
 http.route({
   path: "/api/health",

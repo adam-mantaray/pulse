@@ -15,7 +15,7 @@ import { Box, Text } from '../design/primitives';
 interface Habit {
   _id: string;
   name: string;
-  emoji: string;
+  emoji?: string;
   currentStreak: number;
 }
 
@@ -24,6 +24,10 @@ interface HabitCardProps {
   isCompleted: boolean;
   onComplete: () => void;
   variant?: 'mini' | 'full';
+}
+
+function getInitial(name: string): string {
+  return name.charAt(0).toUpperCase();
 }
 
 export default function HabitCard({
@@ -63,7 +67,21 @@ export default function HabitCard({
             width={80}
             marginRight="s"
           >
-            <Text style={{ fontSize: 28 }}>{habit.emoji}</Text>
+            <Box
+              width={36}
+              height={36}
+              borderRadius="pill"
+              backgroundColor={isCompleted ? 'transparent' : 'accentLight'}
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Text
+                variant="subheading"
+                color={isCompleted ? 'textOnAccent' : 'accent'}
+              >
+                {getInitial(habit.name)}
+              </Text>
+            </Box>
             <Text
               variant="bodySmall"
               color={isCompleted ? 'textOnAccent' : 'textSecondary'}
@@ -78,7 +96,7 @@ export default function HabitCard({
                 color={isCompleted ? 'textOnAccent' : 'streak'}
                 style={{ fontSize: 10 }}
               >
-                🔥 {habit.currentStreak}
+                {habit.currentStreak}d streak
               </Text>
             )}
           </Box>
@@ -100,7 +118,22 @@ export default function HabitCard({
           alignItems="center"
           marginBottom="m"
         >
-          <Text style={{ fontSize: 36, marginRight: 12 }}>{habit.emoji}</Text>
+          <Box
+            width={44}
+            height={44}
+            borderRadius="pill"
+            backgroundColor={isCompleted ? 'transparent' : 'accentLight'}
+            alignItems="center"
+            justifyContent="center"
+            marginRight="m"
+          >
+            <Text
+              variant="subheading"
+              color={isCompleted ? 'textOnAccent' : 'accent'}
+            >
+              {getInitial(habit.name)}
+            </Text>
+          </Box>
           <Box flex={1}>
             <Text
               variant="subheading"
@@ -113,7 +146,7 @@ export default function HabitCard({
                 variant="bodySmall"
                 color={isCompleted ? 'textOnAccent' : 'streak'}
               >
-                🔥 {habit.currentStreak} day streak
+                {habit.currentStreak} day streak
               </Text>
             )}
           </Box>

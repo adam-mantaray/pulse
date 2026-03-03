@@ -162,7 +162,6 @@ export default function TimelineScreen() {
                 borderWidth={1}
                 borderColor="border"
               >
-                <Text style={{ fontSize: 48, marginBottom: 12 }}>📋</Text>
                 <Text variant="subheading" color="textPrimary" style={{ textAlign: 'center' }}>
                   No activity yet
                 </Text>

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ScrollView, Pressable } from 'react-native';
+import { ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import BottomSheetComponent from '@gorhom/bottom-sheet';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '@shopify/restyle';
@@ -109,7 +109,6 @@ export default function GoalsScreen() {
                 borderWidth={1}
                 borderColor="border"
               >
-                <Text style={{ fontSize: 48, marginBottom: 12 }}>🎯</Text>
                 <Text variant="subheading" color="textPrimary" style={{ textAlign: 'center' }}>
                   No goals for {selectedQuarter}
                 </Text>
@@ -155,24 +154,29 @@ export default function GoalsScreen() {
           onClose={() => {}}
           snapPoints={['40%']}
         >
-          <Box padding="xl">
-            <Text variant="heading" marginBottom="md">
-              {sheetMode === 'objective' ? 'New Objective' : 'New Key Result'}
-            </Text>
-            <Input
-              label="TITLE"
-              placeholder={sheetMode === 'objective' ? 'e.g., Launch Pulse MVP' : 'e.g., App in TestFlight by April'}
-              value={newTitle}
-              onChangeText={setNewTitle}
-            />
-            <Box marginTop="xl">
-              <Button
-                label="Create"
-                onPress={handleCreate}
-                disabled={!newTitle.trim()}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <Box padding="xl">
+              <Text variant="heading" marginBottom="md">
+                {sheetMode === 'objective' ? 'New Objective' : 'New Key Result'}
+              </Text>
+              <Input
+                label="TITLE"
+                placeholder={sheetMode === 'objective' ? 'e.g., Launch Pulse MVP' : 'e.g., App in TestFlight by April'}
+                value={newTitle}
+                onChangeText={setNewTitle}
               />
+              <Box marginTop="xl">
+                <Button
+                  label="Create"
+                  onPress={handleCreate}
+                  disabled={!newTitle.trim()}
+                />
+              </Box>
             </Box>
-          </Box>
+          </KeyboardAvoidingView>
         </BottomSheet>
       </Box>
     </SafeArea>

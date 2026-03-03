@@ -24,7 +24,7 @@ type AgentInfo = {
   label: string;
   role: string;
   color: string;
-  emoji: string;
+  emoji?: string;
   status: string;
   currentTask?: string;
 };
@@ -75,7 +75,7 @@ function AgentList({ onSelect }: { onSelect: (agent: AgentInfo) => void }) {
           >
             <View style={[styles.avatar, { backgroundColor: agent.color }]}>
               <Text style={styles.avatarText}>
-                {agent.emoji || agent.label[0]}
+                {agent.label[0]}
               </Text>
             </View>
             <View style={styles.agentInfo}>
