@@ -13,6 +13,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '@shopify/restyle';
+import { useRouter } from 'expo-router';
 import { Theme } from '../../src/design/theme';
 import { Box, Text, SafeArea, Button, Input, BottomSheet } from '../../src/design/primitives';
 import FAB from '../../src/components/FAB';
@@ -32,35 +33,29 @@ const SUB_COLORS = [
 ];
 
 // Position map: which 3x3 block each sub-goal occupies
-// Layout: 3x3 grid of 3x3 blocks. Center block = main goal + 8 sub-goals.
-// Surrounding 8 blocks = one per sub-goal with its 8 actions.
 const BLOCK_POSITIONS: Array<{ row: number; col: number }> = [
-  { row: 0, col: 0 }, // sub-goal 0 (top-left)
-  { row: 0, col: 1 }, // sub-goal 1 (top-center)
-  { row: 0, col: 2 }, // sub-goal 2 (top-right)
-  { row: 1, col: 0 }, // sub-goal 3 (middle-left)
-  // center block is the main goal (row:1, col:1)
-  { row: 1, col: 2 }, // sub-goal 4 (middle-right)
-  { row: 2, col: 0 }, // sub-goal 5 (bottom-left)
-  { row: 2, col: 1 }, // sub-goal 6 (bottom-center)
-  { row: 2, col: 2 }, // sub-goal 7 (bottom-right)
+  { row: 0, col: 0 },
+  { row: 0, col: 1 },
+  { row: 0, col: 2 },
+  { row: 1, col: 0 },
+  { row: 1, col: 2 },
+  { row: 2, col: 0 },
+  { row: 2, col: 1 },
+  { row: 2, col: 2 },
 ];
 
-// Within a 3x3 block, the center cell is the sub-goal label,
-// surrounding 8 cells are the actions (clockwise from top-left)
+// Within a 3x3 block, surrounding 8 cells are the actions
 const ACTION_OFFSETS = [
-  { r: 0, c: 0 }, // 0: top-left
-  { r: 0, c: 1 }, // 1: top-center
-  { r: 0, c: 2 }, // 2: top-right
-  { r: 1, c: 0 }, // 3: middle-left
-  // center = sub-goal
-  { r: 1, c: 2 }, // 4: middle-right
-  { r: 2, c: 0 }, // 5: bottom-left
-  { r: 2, c: 1 }, // 6: bottom-center
-  { r: 2, c: 2 }, // 7: bottom-right
+  { r: 0, c: 0 },
+  { r: 0, c: 1 },
+  { r: 0, c: 2 },
+  { r: 1, c: 0 },
+  { r: 1, c: 2 },
+  { r: 2, c: 0 },
+  { r: 2, c: 1 },
+  { r: 2, c: 2 },
 ];
 
-// Same offsets for center block sub-goals
 const CENTER_OFFSETS = ACTION_OFFSETS;
 
 type ChartData = {
@@ -68,10 +63,18 @@ type ChartData = {
   mainGoal: string;
   subGoals: string[];
   actions: string[][];
+  actionsDone?: boolean[][];
+  isActive?: boolean;
   title: string;
 };
 
-function MandalaGrid({ chart }: { chart: ChartData }) {
+function MandalaGrid({
+  chart,
+  onSubGoalPress,
+}: {
+  chart: ChartData;
+  onSubGoalPress: (subGoalIndex: number) => void;
+}) {
   const theme = useTheme<Theme>();
   const updateMainGoal = useMutation(api.harada.updateMainGoal);
   const updateSubGoal = useMutation(api.harada.updateSubGoal);
@@ -80,7 +83,14 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
   const [editingCell, setEditingCell] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
-  const handleCellPress = (key: string, currentValue: string) => {
+  const actionsDone = chart.actionsDone ?? Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => false));
+
+  const handleCellPress = (key: string, currentValue: string, subGoalIndex?: number) => {
+    // If tapping a sub-goal center cell in a surrounding block, navigate to drill-down
+    if (key.startsWith('sub-') && !key.startsWith('sub-center-') && subGoalIndex !== undefined) {
+      onSubGoalPress(subGoalIndex);
+      return;
+    }
     setEditingCell(key);
     setEditValue(currentValue);
   };
@@ -91,8 +101,8 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
 
     if (editingCell === 'main') {
       await updateMainGoal({ chartId: chart._id, mainGoal: val });
-    } else if (editingCell.startsWith('sub-')) {
-      const idx = parseInt(editingCell.split('-')[1]);
+    } else if (editingCell.startsWith('sub-center-')) {
+      const idx = parseInt(editingCell.split('-')[2]);
       await updateSubGoal({ chartId: chart._id, index: idx, value: val });
     } else if (editingCell.startsWith('action-')) {
       const parts = editingCell.split('-');
@@ -103,7 +113,6 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
     setEditingCell(null);
   }, [editingCell, editValue, chart._id]);
 
-  // Build the 9x9 grid
   const renderCell = (gridRow: number, gridCol: number) => {
     const blockRow = Math.floor(gridRow / 3);
     const blockCol = Math.floor(gridCol / 3);
@@ -116,6 +125,8 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
     let bgColor: string = theme.colors.cardBackground;
     let textColor: string = theme.colors.textPrimary;
     let isBold = false;
+    let subGoalIdx: number | undefined;
+    let isDone = false;
 
     if (blockRow === 1 && blockCol === 1) {
       // Center block: main goal + 8 sub-goals
@@ -130,7 +141,7 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
           (o) => o.r === localRow && o.c === localCol
         );
         if (offsetIdx >= 0) {
-          cellKey = `sub-${offsetIdx}`;
+          cellKey = `sub-center-${offsetIdx}`;
           cellValue = chart.subGoals[offsetIdx] || '';
           bgColor = SUB_COLORS[offsetIdx];
           textColor = '#FFFFFF';
@@ -154,6 +165,7 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
           bgColor = SUB_COLORS[subIdx];
           textColor = '#FFFFFF';
           isBold = true;
+          subGoalIdx = subIdx;
         } else {
           const actionIdx = ACTION_OFFSETS.findIndex(
             (o) => o.r === localRow && o.c === localCol
@@ -161,8 +173,13 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
           if (actionIdx >= 0) {
             cellKey = `action-${subIdx}-${actionIdx}`;
             cellValue = chart.actions[subIdx]?.[actionIdx] || '';
-            bgColor = `${SUB_COLORS[subIdx]}18`;
-            textColor = theme.colors.textPrimary;
+            isDone = actionsDone[subIdx]?.[actionIdx] ?? false;
+            bgColor = isDone
+              ? `${SUB_COLORS[subIdx]}40`
+              : `${SUB_COLORS[subIdx]}18`;
+            textColor = isDone
+              ? theme.colors.success
+              : theme.colors.textPrimary;
           }
         }
       }
@@ -173,7 +190,7 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
     return (
       <Pressable
         key={`${gridRow}-${gridCol}`}
-        onPress={() => handleCellPress(cellKey, cellValue)}
+        onPress={() => handleCellPress(cellKey, cellValue, subGoalIdx)}
         style={{
           width: CELL_SIZE,
           height: CELL_SIZE,
@@ -214,6 +231,7 @@ function MandalaGrid({ chart }: { chart: ChartData }) {
               color: textColor,
               textAlign: 'center',
               lineHeight: isBold ? 10 : 9,
+              textDecorationLine: isDone && !isBold ? 'line-through' : 'none',
             }}
             numberOfLines={3}
           >
@@ -248,11 +266,42 @@ function ChartListView({
   charts,
   onSelect,
   onCreate,
+  onSetActive,
+  onDelete,
 }: {
   charts: ChartData[];
   onSelect: (chart: ChartData) => void;
   onCreate: () => void;
+  onSetActive: (chartId: Id<"haradaCharts">) => void;
+  onDelete: (chartId: Id<"haradaCharts">) => void;
 }) {
+  const handleLongPress = (chart: ChartData) => {
+    const options: Array<{ text: string; style?: 'destructive' | 'cancel'; onPress?: () => void }> = [];
+    if (!chart.isActive) {
+      options.push({
+        text: 'Set as Active',
+        onPress: () => onSetActive(chart._id),
+      });
+    }
+    options.push({
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () => {
+        Alert.alert(
+          'Delete Chart',
+          `Are you sure you want to delete "${chart.title}"?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: () => onDelete(chart._id) },
+          ]
+        );
+      },
+    });
+    options.push({ text: 'Cancel', style: 'cancel' });
+
+    Alert.alert(chart.title, undefined, options);
+  };
+
   return (
     <SafeArea edges={['top']}>
       <Box flex={1} backgroundColor="mainBackground">
@@ -262,10 +311,10 @@ function ChartListView({
         >
           <Box paddingHorizontal="xl" paddingTop="md" paddingBottom="md">
             <Text variant="heading" color="textPrimary">
-              Harada Method
+              Vision
             </Text>
             <Text variant="bodySmall" color="textTertiary">
-              Open Window 64 — Mandala Charts
+              Harada Method — Open Window 64
             </Text>
           </Box>
 
@@ -280,14 +329,14 @@ function ChartListView({
                 borderColor="border"
               >
                 <Text variant="subheading" color="textPrimary" style={{ textAlign: 'center' }}>
-                  No charts yet
+                  Create your first vision chart
                 </Text>
                 <Text
                   variant="bodySmall"
                   color="textTertiary"
                   style={{ textAlign: 'center', marginTop: 4 }}
                 >
-                  Create your first Harada mandala chart to break down your main goal into 64 actionable steps
+                  Break down your main goal into 8 sub-goals and 64 actionable steps
                 </Text>
               </Box>
             ) : (
@@ -296,21 +345,43 @@ function ChartListView({
                   .flat()
                   .filter((a) => a.length > 0).length;
                 const filledSubGoals = chart.subGoals.filter((s) => s.length > 0).length;
+                const actionsDone = chart.actionsDone ?? [];
+                const doneCount = actionsDone.flat().filter(Boolean).length;
 
                 return (
-                  <Pressable key={chart._id} onPress={() => onSelect(chart)}>
+                  <Pressable
+                    key={chart._id}
+                    onPress={() => onSelect(chart)}
+                    onLongPress={() => handleLongPress(chart)}
+                  >
                     <Box
                       backgroundColor="cardBackground"
                       borderRadius="md"
                       padding="md"
                       borderWidth={1}
-                      borderColor="border"
+                      borderColor={chart.isActive ? 'accent' : 'border'}
                       marginBottom="m"
                     >
-                      <Text variant="subheading" color="textPrimary">
-                        {chart.title}
-                      </Text>
-                      <Text variant="bodySmall" color="accent" marginTop="xs">
+                      <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+                        <Box flex={1}>
+                          <Text variant="subheading" color="textPrimary">
+                            {chart.title}
+                          </Text>
+                        </Box>
+                        {chart.isActive && (
+                          <Box
+                            backgroundColor="accentLight"
+                            paddingHorizontal="s"
+                            paddingVertical="xs"
+                            borderRadius="sm"
+                          >
+                            <Text variant="bodySmall" color="accent" style={{ fontSize: 11 }}>
+                              Active
+                            </Text>
+                          </Box>
+                        )}
+                      </Box>
+                      <Text variant="bodySmall" color="accent" marginTop="xs" numberOfLines={1}>
                         {chart.mainGoal || 'No main goal set'}
                       </Text>
                       <Box flexDirection="row" marginTop="s" gap="md">
@@ -320,6 +391,11 @@ function ChartListView({
                         <Text variant="bodySmall" color="textTertiary" style={{ fontSize: 12 }}>
                           {filledActions}/64 actions
                         </Text>
+                        {doneCount > 0 && (
+                          <Text variant="bodySmall" color="success" style={{ fontSize: 12 }}>
+                            {doneCount} done
+                          </Text>
+                        )}
                       </Box>
                     </Box>
                   </Pressable>
@@ -342,6 +418,7 @@ function ChartDetailView({
   onBack: () => void;
 }) {
   const theme = useTheme<Theme>();
+  const router = useRouter();
 
   // Re-fetch for real-time updates
   const liveChart = useQuery(api.harada.get, { chartId: chart._id });
@@ -349,7 +426,13 @@ function ChartDetailView({
 
   const filledActions = displayChart.actions
     .flat()
-    .filter((a) => a.length > 0).length;
+    .filter((a: string) => a.length > 0).length;
+  const actionsDone = (displayChart as ChartData).actionsDone ?? [];
+  const doneCount = actionsDone.flat().filter(Boolean).length;
+
+  const handleSubGoalPress = (subGoalIndex: number) => {
+    router.push(`/harada/${chart._id}/subgoal/${subGoalIndex}`);
+  };
 
   return (
     <SafeArea edges={['top']}>
@@ -370,14 +453,17 @@ function ChartDetailView({
               {displayChart.title}
             </Text>
             <Text variant="bodySmall" color="textTertiary">
-              {filledActions}/64 actions filled
+              {doneCount}/64 done · {filledActions}/64 filled
             </Text>
           </Box>
         </Box>
 
         {/* Mandala Grid */}
         <Box flex={1}>
-          <MandalaGrid chart={displayChart as ChartData} />
+          <MandalaGrid
+            chart={displayChart as ChartData}
+            onSubGoalPress={handleSubGoalPress}
+          />
         </Box>
 
         {/* Legend */}
@@ -389,7 +475,7 @@ function ChartDetailView({
           borderColor="border"
         >
           <Text variant="label" marginBottom="xs">
-            TAP ANY CELL TO EDIT
+            TAP SUB-GOAL TO DRILL DOWN · TAP ACTION TO EDIT
           </Text>
           <Box flexDirection="row" flexWrap="wrap" gap="s">
             <Box flexDirection="row" alignItems="center">
@@ -447,6 +533,8 @@ export default function HaradaScreen() {
     typedUserId ? { userId: typedUserId } : "skip"
   );
   const createChart = useMutation(api.harada.create);
+  const setActiveMutation = useMutation(api.harada.setActive);
+  const removeChart = useMutation(api.harada.remove);
 
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null);
   const [newTitle, setNewTitle] = useState('');
@@ -463,15 +551,24 @@ export default function HaradaScreen() {
     setNewMainGoal('');
     sheetRef.current?.close();
 
-    // Auto-open the new chart
     const newChart: ChartData = {
       _id: chartId,
       title: newTitle.trim(),
       mainGoal: newMainGoal.trim(),
       subGoals: Array(8).fill(''),
       actions: Array(8).fill(null).map(() => Array(8).fill('')),
+      actionsDone: Array(8).fill(null).map(() => Array(8).fill(false)),
+      isActive: true,
     };
     setSelectedChart(newChart);
+  };
+
+  const handleSetActive = async (chartId: Id<"haradaCharts">) => {
+    await setActiveMutation({ chartId });
+  };
+
+  const handleDelete = async (chartId: Id<"haradaCharts">) => {
+    await removeChart({ chartId });
   };
 
   if (selectedChart) {
@@ -493,6 +590,8 @@ export default function HaradaScreen() {
           setNewMainGoal('');
           sheetRef.current?.snapToIndex(0);
         }}
+        onSetActive={handleSetActive}
+        onDelete={handleDelete}
       />
       <BottomSheet
         sheetRef={sheetRef}
@@ -505,18 +604,18 @@ export default function HaradaScreen() {
         >
           <Box padding="xl">
             <Text variant="heading" marginBottom="md">
-              New Mandala Chart
+              New Vision Chart
             </Text>
             <Input
               label="CHART NAME"
-              placeholder="e.g., Q1 2026 Goals"
+              placeholder="e.g., Life Vision 2026"
               value={newTitle}
               onChangeText={setNewTitle}
             />
             <Box marginTop="md">
               <Input
                 label="MAIN GOAL (CENTER)"
-                placeholder="e.g., Ship Pulse MVP"
+                placeholder="e.g., Build the life I want"
                 value={newMainGoal}
                 onChangeText={setNewMainGoal}
               />
