@@ -1,6 +1,7 @@
 import { mutation, query, action, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
+import bcrypt from "bcryptjs";
 
 export const createUser = mutation({
   args: {
@@ -40,10 +41,11 @@ export const authenticateUser = action({
     password: v.string(),
   },
   handler: async (ctx, args): Promise<{ userId: string; name: string } | null> => {
-    const user = await ctx.runQuery(internal.users.getUserByEmail, { email: args.email });
+    const user = await ctx.runQuery(internal.users.getUserByEmail, {
+      email: args.email.trim().toLowerCase(),
+    });
     if (!user) return null;
 
-    const bcrypt = require("bcryptjs");
     const valid = await bcrypt.compare(args.password, user.passwordHash);
     if (!valid) return null;
 

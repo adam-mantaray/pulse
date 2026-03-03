@@ -83,6 +83,7 @@ export default defineSchema({
     timestamp: v.number(),
     read: v.boolean(),
     delivered: v.optional(v.boolean()),
+    relatedTaskId: v.optional(v.id("haradaTasks")),
   }).index("by_agent", ["agentName", "timestamp"]),
 
   briefings: defineTable({

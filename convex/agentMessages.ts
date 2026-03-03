@@ -130,6 +130,30 @@ export const markDelivered = mutation({
   },
 });
 
+// Send task-related message to an agent (outbound, used by haradaTasks.sendToAgent)
+export const sendToAgent = mutation({
+  args: {
+    agentName: v.string(),
+    content: v.string(),
+    relatedTaskId: v.optional(v.id("haradaTasks")),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.query("users").first();
+    if (!user) throw new Error("No user found");
+
+    return await ctx.db.insert("agentMessages", {
+      userId: user._id,
+      agentName: args.agentName,
+      direction: "outbound",
+      content: args.content,
+      timestamp: Date.now(),
+      read: true,
+      delivered: false,
+      relatedTaskId: args.relatedTaskId,
+    });
+  },
+});
+
 // Internal: agent writes inbound message
 export const insertInbound = internalMutation({
   args: {

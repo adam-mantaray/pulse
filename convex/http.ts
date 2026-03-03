@@ -150,6 +150,106 @@ http.route({
   }),
 });
 
+// ── Agent task callbacks ─────────────────────────────────────────────
+
+function verifyAgentSecret(request: Request): Response | null {
+  const secret = process.env.PULSE_AGENT_SECRET;
+  if (!secret) return null; // not configured — skip check in dev
+  const provided = request.headers.get("x-pulse-secret");
+  if (provided !== secret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return null;
+}
+
+// Agent submits flesh-out plan
+http.route({
+  path: "/api/pulse/tasks/flesh-out",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authError = verifyAgentSecret(request);
+    if (authError) return authError;
+
+    const body = await request.json();
+    const { taskId, plan, agentName } = body;
+
+    if (!taskId || !plan || !agentName) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: taskId, plan, agentName" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    await ctx.runMutation(api.haradaTasks.receiveFleshOut, { taskId, plan, agentName });
+
+    return new Response(
+      JSON.stringify({ ok: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
+// Agent marks task complete
+http.route({
+  path: "/api/pulse/tasks/complete",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authError = verifyAgentSecret(request);
+    if (authError) return authError;
+
+    const body = await request.json();
+    const { taskId, notes, agentName } = body;
+
+    if (!taskId || !notes || !agentName) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: taskId, notes, agentName" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    await ctx.runMutation(api.haradaTasks.receiveComplete, { taskId, notes, agentName });
+
+    return new Response(
+      JSON.stringify({ ok: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
+// Agent sends progress update
+http.route({
+  path: "/api/pulse/tasks/update",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const authError = verifyAgentSecret(request);
+    if (authError) return authError;
+
+    const body = await request.json();
+    const { taskId, notes } = body;
+
+    if (!taskId) {
+      return new Response(
+        JSON.stringify({ error: "Missing required field: taskId" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    await ctx.runMutation(api.haradaTasks.update, {
+      taskId,
+      executionNotes: notes,
+      status: "executing",
+    });
+
+    return new Response(
+      JSON.stringify({ ok: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
+});
+
 // Health check
 http.route({
   path: "/api/health",
