@@ -9,6 +9,7 @@ import GoalRing from '../../src/components/GoalRing';
 import HabitCard from '../../src/components/HabitCard';
 import AgentAvatar from '../../src/components/AgentAvatar';
 import FAB from '../../src/components/FAB';
+import { Section } from '../../src/components/ErrorBoundary';
 import { useAuth } from '../../src/hooks/useAuth';
 import { useHabits } from '../../src/hooks/useHabits';
 import { useGoals } from '../../src/hooks/useGoals';
@@ -97,27 +98,30 @@ export default function DashboardScreen() {
           </Box>
 
           {/* Goals Ring */}
+          <Section label="GoalRing">
           <Box alignItems="center" paddingVertical="xl">
             <GoalRing
               progress={overallProgress}
               label={`${quarter.replace('-', ' ')} Goals`}
             />
           </Box>
+          </Section>
 
           {/* Today's Habits */}
+          <Section label="Habits">
           <Box paddingHorizontal="xl" marginBottom="md">
             <Text variant="label" marginBottom="m">
               TODAY'S HABITS
             </Text>
             {isLoading ? (
               <Text variant="bodySmall" color="textTertiary">Loading...</Text>
-            ) : habits.length === 0 ? (
+            ) : (habits ?? []).length === 0 ? (
               <Text variant="bodySmall" color="textTertiary">
                 No habits yet. Tap + to create one.
               </Text>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {habits.map((habit) => (
+                {(habits ?? []).map((habit) => (
                   <HabitCard
                     key={habit._id}
                     habit={habit}
@@ -129,8 +133,10 @@ export default function DashboardScreen() {
               </ScrollView>
             )}
           </Box>
+          </Section>
 
           {/* Active Sprint Card */}
+          <Section label="SprintCard">
           <Box paddingHorizontal="xl" marginBottom="md">
             <Box
               backgroundColor="cardBackground"
@@ -154,8 +160,10 @@ export default function DashboardScreen() {
               </Text>
             </Box>
           </Box>
+          </Section>
 
           {/* Agent Status Bar */}
+          <Section label="AgentTeam">
           <Box paddingHorizontal="xl" marginBottom="md">
             <Text variant="label" marginBottom="m">
               AGENT TEAM
@@ -171,6 +179,7 @@ export default function DashboardScreen() {
               ))}
             </Box>
           </Box>
+          </Section>
 
         </ScrollView>
 

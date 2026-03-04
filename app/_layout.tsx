@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider } from '../src/design/ThemeProvider';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { useAuth } from '../src/hooks/useAuth';
 
 const CONVEX_URL =
@@ -32,6 +33,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
+    <ErrorBoundary label="Root">
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ConvexProvider client={convex}>
         <SafeAreaProvider>
@@ -46,5 +48,6 @@ export default function RootLayout() {
         </SafeAreaProvider>
       </ConvexProvider>
     </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
