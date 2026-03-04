@@ -254,7 +254,7 @@ export const remove = mutation({
     // Cascade-delete all tasks belonging to this chart
     const tasks = await ctx.db
       .query("haradaTasks")
-      .filter((q) => q.eq(q.field("chartId"), args.chartId))
+      .withIndex("by_chart_action", (q) => q.eq("chartId", args.chartId))
       .collect();
     for (const task of tasks) {
       await ctx.db.delete(task._id);
