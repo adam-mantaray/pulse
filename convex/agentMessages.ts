@@ -18,42 +18,38 @@ export const listByAgent = query({
 });
 
 // List latest message per agent (for chat list preview)
+// Uses 2 queries + JS grouping instead of N+1 per-agent queries
 export const listConversations = query({
   handler: async (ctx) => {
-    // Dynamic: pull agent IDs from the agents table
+    // Query 1: all registered agents
     const registeredAgents = await ctx.db.query("agents").collect();
-    const agents = registeredAgents.map((a) => a.agentId);
-    const conversations = [];
+    const agentNames = registeredAgents.map((a) => a.agentId);
 
-    for (const agentName of agents) {
-      const lastMessage = await ctx.db
-        .query("agentMessages")
-        .withIndex("by_agent", (q) => q.eq("agentName", agentName))
-        .order("desc")
-        .first();
+    // Query 2: all messages (single scan, grouped in JS)
+    const allMessages = await ctx.db.query("agentMessages").collect();
 
-      const unreadCount = lastMessage
-        ? (
-            await ctx.db
-              .query("agentMessages")
-              .withIndex("by_agent", (q) => q.eq("agentName", agentName))
-              .filter((q) =>
-                q.and(
-                  q.eq(q.field("direction"), "inbound"),
-                  q.eq(q.field("read"), false)
-                )
-              )
-              .collect()
-          ).length
-        : 0;
+    // JS grouping: last message + unread count per agent
+    const lastMessageByAgent: Record<string, (typeof allMessages)[0]> = {};
+    const unreadByAgent: Record<string, number> = {};
 
-      conversations.push({
-        agentName,
-        lastMessage: lastMessage?.content ?? null,
-        lastTimestamp: lastMessage?.timestamp ?? 0,
-        unread: unreadCount,
-      });
+    for (const msg of allMessages) {
+      // Track last message by timestamp
+      const existing = lastMessageByAgent[msg.agentName];
+      if (!existing || msg.timestamp > existing.timestamp) {
+        lastMessageByAgent[msg.agentName] = msg;
+      }
+      // Count unread inbound messages
+      if (msg.direction === "inbound" && !msg.read) {
+        unreadByAgent[msg.agentName] = (unreadByAgent[msg.agentName] ?? 0) + 1;
+      }
     }
+
+    const conversations = agentNames.map((agentName) => ({
+      agentName,
+      lastMessage: lastMessageByAgent[agentName]?.content ?? null,
+      lastTimestamp: lastMessageByAgent[agentName]?.timestamp ?? 0,
+      unread: unreadByAgent[agentName] ?? 0,
+    }));
 
     return conversations.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
   },
