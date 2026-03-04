@@ -47,6 +47,7 @@ export default function DashboardScreen() {
   const { habits, completedHabitIds, completeHabit, isLoading: habitsLoading } = useHabits(typedUserId);
   const { objectives, isLoading: goalsLoading } = useGoals(typedUserId, quarter);
   const [refreshing, setRefreshing] = React.useState(false);
+  const sprintSummary = useConvexQuery(api.linearSync.getSprintSummary);
   const registeredAgents = useConvexQuery(api.agents.list);
   const [selectedAgent, setSelectedAgent] = useState<typeof registeredAgents extends (infer T)[] | null | undefined ? T : never | null>(null);
   const agentSheetRef = useRef<BottomSheetComponent>(null);
@@ -142,10 +143,14 @@ export default function DashboardScreen() {
                 CURRENT SPRINT
               </Text>
               <Text variant="subheading" color="textPrimary">
-                Active Development
+                {sprintSummary
+                  ? `${sprintSummary.completedTasks} / ${sprintSummary.totalTasks} tasks done`
+                  : 'Loading sprint...'}
               </Text>
               <Text variant="bodySmall" color="textTertiary" marginTop="xs">
-                Syncs from Linear every 5 minutes
+                {sprintSummary
+                  ? `${sprintSummary.inProgressTasks} in progress · ${sprintSummary.projectCount} project${sprintSummary.projectCount !== 1 ? 's' : ''}`
+                  : 'Syncs from Linear every 5 minutes'}
               </Text>
             </Box>
           </Box>

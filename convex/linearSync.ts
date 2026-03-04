@@ -1,4 +1,4 @@
-import { action, internalAction, internalMutation } from "./_generated/server";
+import { action, internalAction, internalMutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
@@ -187,5 +187,17 @@ export const triggerSync = action({
   args: {},
   handler: async (ctx) => {
     await ctx.runAction(internal.linearSync.syncLinearProjects, {});
+  },
+});
+
+export const getSprintSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("linearCache").collect();
+    const totalTasks = rows.reduce((s, r) => s + r.totalTasks, 0);
+    const completedTasks = rows.reduce((s, r) => s + r.completedTasks, 0);
+    const inProgressTasks = rows.reduce((s, r) => s + r.inProgressTasks, 0);
+    const lastSynced = rows.length > 0 ? Math.max(...rows.map((r) => r.lastSynced)) : null;
+    return { totalTasks, completedTasks, inProgressTasks, lastSynced, projectCount: rows.length };
   },
 });
