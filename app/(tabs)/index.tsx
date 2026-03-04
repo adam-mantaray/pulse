@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
@@ -48,6 +48,13 @@ export default function DashboardScreen() {
   const { objectives, isLoading: goalsLoading } = useGoals(typedUserId, quarter);
   const [refreshing, setRefreshing] = React.useState(false);
   const registeredAgents = useConvexQuery(api.agents.list);
+  const [selectedAgent, setSelectedAgent] = useState<typeof registeredAgents extends (infer T)[] | null | undefined ? T : never | null>(null);
+  const agentSheetRef = useRef<BottomSheetComponent>(null);
+
+  const handleAgentPress = useCallback((agent: NonNullable<typeof registeredAgents>[number]) => {
+    setSelectedAgent(agent);
+    agentSheetRef.current?.snapToIndex(0);
+  }, []);
   const overallProgress = objectives.length > 0
     ? Math.round(objectives.reduce((sum, o) => sum + o.progress, 0) / objectives.length)
     : 0;
@@ -154,6 +161,7 @@ export default function DashboardScreen() {
                   key={agent.agentId}
                   name={agent.name}
                   isActive={agent.status === 'active'}
+                  onPress={() => handleAgentPress(agent)}
                 />
               ))}
             </Box>
@@ -192,6 +200,57 @@ export default function DashboardScreen() {
               />
             </Box>
           </Box>
+        </BottomSheet>
+
+        {/* Agent Detail Sheet */}
+        <BottomSheet
+          sheetRef={agentSheetRef}
+          onClose={() => setSelectedAgent(null)}
+          snapPoints={['40%']}
+        >
+          {selectedAgent && (
+            <Box padding="xl">
+              <Box flexDirection="row" alignItems="center" marginBottom="l">
+                <Box
+                  width={48}
+                  height={48}
+                  borderRadius="round"
+                  backgroundColor="cardBackground"
+                  alignItems="center"
+                  justifyContent="center"
+                  marginRight="m"
+                >
+                  <Text variant="heading">{selectedAgent.name?.charAt(0) ?? '?'}</Text>
+                </Box>
+                <Box flex={1}>
+                  <Text variant="subheading">{selectedAgent.name}</Text>
+                  <Text variant="bodySmall" color="textSecondary">{selectedAgent.agentId}</Text>
+                </Box>
+              </Box>
+              <Box gap="s">
+                <Box flexDirection="row" justifyContent="space-between" paddingVertical="s">
+                  <Text variant="label" color="textSecondary">Status</Text>
+                  <Text variant="body" color={selectedAgent.status === 'active' ? 'income' : 'textTertiary'}>
+                    {selectedAgent.status ?? 'unknown'}
+                  </Text>
+                </Box>
+                <Box flexDirection="row" justifyContent="space-between" paddingVertical="s">
+                  <Text variant="label" color="textSecondary">Current Task</Text>
+                  <Text variant="body" numberOfLines={1} style={{ maxWidth: '60%', textAlign: 'right' }}>
+                    {(selectedAgent as any).currentTask ?? '—'}
+                  </Text>
+                </Box>
+                <Box flexDirection="row" justifyContent="space-between" paddingVertical="s">
+                  <Text variant="label" color="textSecondary">Last Seen</Text>
+                  <Text variant="body" color="textSecondary">
+                    {(selectedAgent as any).lastSeen
+                      ? new Date((selectedAgent as any).lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : '—'}
+                  </Text>
+                </Box>
+              </Box>
+            </Box>
+          )}
         </BottomSheet>
       </Box>
     </SafeArea>
