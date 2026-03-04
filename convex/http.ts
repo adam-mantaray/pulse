@@ -4,7 +4,12 @@ import { api, internal } from "./_generated/api";
 
 function verifyWebhookSecret(request: Request): Response | null {
   const secret = process.env.PULSE_WEBHOOK_SECRET;
-  if (!secret) return null; // not configured — skip check in dev
+  if (!secret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const provided = request.headers.get("x-webhook-secret") ?? request.headers.get("authorization")?.replace("Bearer ", "");
   if (provided !== secret) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -154,7 +159,12 @@ http.route({
 
 function verifyAgentSecret(request: Request): Response | null {
   const secret = process.env.PULSE_AGENT_SECRET;
-  if (!secret) return null; // not configured — skip check in dev
+  if (!secret) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const provided = request.headers.get("x-pulse-secret");
   if (provided !== secret) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {

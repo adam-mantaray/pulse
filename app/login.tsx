@@ -70,7 +70,7 @@ export default function LoginScreen() {
           <Box>
             <Input
               label="EMAIL"
-              placeholder="ahmed@mantaray.digital"
+              placeholder="you@example.com"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
