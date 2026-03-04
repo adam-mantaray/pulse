@@ -5,6 +5,7 @@ import { useAction } from 'convex/react';
 import { api } from '../convex/_generated/api';
 import { Box, Text, SafeArea, Button, Input } from '../src/design/primitives';
 import { useAuth } from '../src/hooks/useAuth';
+import { analytics, EVENTS } from '../src/lib/analytics';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,6 +34,8 @@ export default function LoginScreen() {
 
       if (result) {
         await login(result.userId, result.name);
+        analytics.identify(result.userId, { name: result.name });
+        analytics.capture(EVENTS.LOGIN, { method: 'email' });
         router.replace('/(tabs)');
       } else {
         setError('Invalid email or password');

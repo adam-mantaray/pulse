@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Send, ArrowLeft, Circle } from 'lucide-react-native';
+import { analytics, EVENTS } from '../../src/lib/analytics';
 
 // Agent colors by index for consistent styling
 const AGENT_COLORS = [
@@ -118,8 +119,17 @@ function ChatView({
   const markRead = useMutation(api.agentMessages.markRead);
   const flatListRef = useRef<FlatList>(null);
 
-  React.useEffect(() => {
+  const prevCountRef = useRef(messages?.length ?? 0);
+  useEffect(() => {
     markRead({ agentName });
+    const currentCount = messages?.length ?? 0;
+    if (currentCount > prevCountRef.current && messages) {
+      const latest = messages[messages.length - 1];
+      if (latest?.direction === 'inbound') {
+        analytics.capture(EVENTS.AGENT_MESSAGE_RECEIVED, { agentId: agentName });
+      }
+    }
+    prevCountRef.current = currentCount;
   }, [agentName, messages?.length]);
 
   const handleSend = async () => {
@@ -127,6 +137,7 @@ function ChatView({
     const msg = text.trim();
     setText('');
     await sendMessage({ agentName, content: msg });
+    analytics.capture(EVENTS.AGENT_MESSAGE_SENT, { agentId: agentName });
   };
 
   return (

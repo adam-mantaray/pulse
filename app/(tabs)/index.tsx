@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@shopify/restyle';
@@ -16,6 +16,7 @@ import { useGoals } from '../../src/hooks/useGoals';
 import { Id } from '../../convex/_generated/dataModel';
 import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { analytics, EVENTS } from '../../src/lib/analytics';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -52,6 +53,10 @@ export default function DashboardScreen() {
   const registeredAgents = useConvexQuery(api.agents.list);
   const [selectedAgent, setSelectedAgent] = useState<typeof registeredAgents extends (infer T)[] | null | undefined ? T : never | null>(null);
   const agentSheetRef = useRef<BottomSheetComponent>(null);
+
+  useEffect(() => {
+    analytics.capture(EVENTS.DASHBOARD_VIEWED);
+  }, []);
 
   const handleAgentPress = useCallback((agent: NonNullable<typeof registeredAgents>[number]) => {
     setSelectedAgent(agent);

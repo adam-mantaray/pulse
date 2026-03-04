@@ -16,6 +16,7 @@ import { Id } from '../../../../../convex/_generated/dataModel';
 import { Theme } from '../../../../../src/design/theme';
 import { Box, Text, SafeArea, Button, Input, BottomSheet } from '../../../../../src/design/primitives';
 import { useAuth } from '../../../../../src/hooks/useAuth';
+import { analytics, EVENTS } from '../../../../../src/lib/analytics';
 
 const FREQUENCY_OPTIONS: Array<{ label: string; value: 'daily' | 'weekdays' | 'custom' }> = [
   { label: 'Daily', value: 'daily' },
@@ -185,6 +186,7 @@ export default function ActionDetailScreen() {
   };
 
   const handleFocus = () => {
+    analytics.capture(EVENTS.POMODORO_STARTED, { actionIndex, subGoalIndex });
     Alert.alert('Coming Soon', 'Pomodoro timer is coming in Phase C.');
   };
 

@@ -5,8 +5,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider } from '../src/design/ThemeProvider';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import { initSentry, Sentry } from '../src/lib/sentry';
+import { setAnalyticsClient } from '../src/lib/analytics';
 
 // Init Sentry before anything else renders
 initSentry();
@@ -35,22 +37,36 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AnalyticsCapture() {
+  const posthog = usePostHog();
+  useEffect(() => {
+    if (posthog) setAnalyticsClient(posthog);
+  }, [posthog]);
+  return null;
+}
+
 function RootLayoutInner() {
   return (
     <ErrorBoundary label="Root">
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <ConvexProvider client={convex}>
-          <SafeAreaProvider>
-            <ThemeProvider>
-              <AuthGate>
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="login" />
-                  <Stack.Screen name="(tabs)" />
-                </Stack>
-              </AuthGate>
-            </ThemeProvider>
-          </SafeAreaProvider>
-        </ConvexProvider>
+        <PostHogProvider
+          apiKey="phc_XZ4P0qOPRt9HxN4mGaVIS69DN9F5IvJIzoSHGTAweDs"
+          options={{ host: 'https://us.i.posthog.com' }}
+        >
+          <AnalyticsCapture />
+          <ConvexProvider client={convex}>
+            <SafeAreaProvider>
+              <ThemeProvider>
+                <AuthGate>
+                  <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="login" />
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                </AuthGate>
+              </ThemeProvider>
+            </SafeAreaProvider>
+          </ConvexProvider>
+        </PostHogProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );
