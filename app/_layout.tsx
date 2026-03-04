@@ -6,6 +6,10 @@ import { ConvexProvider, ConvexReactClient } from 'convex/react';
 import { ThemeProvider } from '../src/design/ThemeProvider';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { useAuth } from '../src/hooks/useAuth';
+import { initSentry, Sentry } from '../src/lib/sentry';
+
+// Init Sentry before anything else renders
+initSentry();
 
 const CONVEX_URL =
   process.env.EXPO_PUBLIC_CONVEX_URL ??
@@ -31,23 +35,25 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function RootLayout() {
+function RootLayoutInner() {
   return (
     <ErrorBoundary label="Root">
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ConvexProvider client={convex}>
-        <SafeAreaProvider>
-          <ThemeProvider>
-            <AuthGate>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="login" />
-                <Stack.Screen name="(tabs)" />
-              </Stack>
-            </AuthGate>
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </ConvexProvider>
-    </GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ConvexProvider client={convex}>
+          <SafeAreaProvider>
+            <ThemeProvider>
+              <AuthGate>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="login" />
+                  <Stack.Screen name="(tabs)" />
+                </Stack>
+              </AuthGate>
+            </ThemeProvider>
+          </SafeAreaProvider>
+        </ConvexProvider>
+      </GestureHandlerRootView>
     </ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayoutInner);
